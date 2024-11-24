@@ -1,4 +1,4 @@
-<# Initialize Variables #>
+<# Initialize Global Variables #>
 
 # Get the current folder path where the script is located
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -14,15 +14,15 @@ $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 # Change working directory to script directory
 Set-Location -Path $scriptDir
 
-# > Intel Bluetooth Driver
+# > Install Intel Bluetooth Driver
 
 Start-Process -FilePath "BT-23.60.0-64UWD-Win10-Win11.exe" -ArgumentList /passive
 
-# > Intel Wi-Fi Driver
+# > Install Intel Wi-Fi Driver
 
 Start-Process -FilePath "WiFi-23.60.1-Driver64-Win10-Win11.exe" -ArgumentList /passive
 
-# > Intel Network Connections Driver
+# > Install Intel Network Connections Driver
 
 # Get list of folders in directory for temporary local app data files
 $locAppDataTmpFolders = Get-ChildItem -Path $locAppDataTmpDir -Directory -ErrorAction SilentlyContinue
@@ -80,11 +80,11 @@ do {
 
 Stop-Process -Name "SetupBD" -Force
 
-# > Comber
+# > Install Comber
 
 Start-Process -FilePath "Comber x64 1.0.1.0.exe" -ArgumentList /v"/passive" -Wait
 
-# > Dell Command Update
+# > Install Dell Command Update
 
 # Check that device manufacturer is Dell before installing Dell-specific software update application
 if ($deviceManufacturer -like "Dell*") {
@@ -92,7 +92,7 @@ if ($deviceManufacturer -like "Dell*") {
     Start-Process -FilePath "Dell-Command-Update-Application_T45GH_WIN_5.3.0_A00.exe" -ArgumentList /passthrough, /v"/passive" -Wait
 }
 
-# > Lenovo System Update
+# > Install Lenovo System Update
 
 # Check that device manufacturer is Lenovo before installing Lenovo-specific software update application
 if ($deviceManufacturer -like "LENOVO*") {
