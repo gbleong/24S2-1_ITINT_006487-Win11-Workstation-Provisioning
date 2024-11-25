@@ -9,7 +9,7 @@ $locAppDataTmpDir = Join-Path $env:LOCALAPPDATA "Temp"
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
-<# Start installer processes #>
+<# Start Installation Processes #>
 
 # Change working directory to script directory
 Set-Location -Path $scriptDir
