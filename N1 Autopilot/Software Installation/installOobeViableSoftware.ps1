@@ -14,15 +14,15 @@ $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 # Change working directory to script directory
 Set-Location -Path $scriptDir
 
-# > Install Intel Bluetooth Driver
+# > Install Intel bluetooth driver
 
 Start-Process -FilePath "BT-23.60.0-64UWD-Win10-Win11.exe" -ArgumentList /passive
 
-# > Install Intel Wi-Fi Driver
+# > Install Intel wi-fi driver
 
 Start-Process -FilePath "WiFi-23.60.1-Driver64-Win10-Win11.exe" -ArgumentList /passive
 
-# > Install Intel Network Connections Driver
+# > Install Intel network connections driver
 
 # Get list of folders in directory for temporary local app data files
 $locAppDataTmpFolders = Get-ChildItem -Path $locAppDataTmpDir -Directory -ErrorAction SilentlyContinue
@@ -36,7 +36,7 @@ foreach ($folder in $locAppDataTmpFolders) {
     }
 }
 
-Start-Process -FilePath "Wired_driver_29.1_x64.exe"
+Start-Process -FilePath "Wired_driver_29.3_x64.exe"
 
 $targetWzseTmpFolder = $null
 
@@ -71,11 +71,13 @@ do {
                     $process.WaitForExit()
                     break
                 }
+
             } while (-not (Test-Path -Path $setupbdExe))
 
             break
         }
     }
+    
 } while (-not $targetWzseTmpFolder)
 
 Stop-Process -Name "SetupBD" -Force
@@ -97,7 +99,7 @@ if ($deviceManufacturer -like "Dell*") {
 # Check that device manufacturer is Lenovo before installing Lenovo-specific software update application
 if ($deviceManufacturer -like "LENOVO*") {
 
-    Start-Process -FilePath "system_update_5.08.02.25.exe" -ArgumentList /SP-, /SILENT -Wait
+    Start-Process -FilePath "system_update_5.08.02.25.exe" -ArgumentList /SP-, /SILENT
 }
 
 <#

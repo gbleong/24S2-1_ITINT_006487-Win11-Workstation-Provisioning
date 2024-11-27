@@ -6,6 +6,9 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
+# Input VPN software name
+$vpnSoftwareName = "GlobalProtect"
+
 <# Start Installation Processes #>
 
 # Change working directory to script directory
@@ -16,9 +19,20 @@ Set-Location -Path $scriptDir
 # Check that device manufacturer is HP before installing HP software update application
 if ($deviceManufacturer -like "HP*") {
 
-    Start-Process -FilePath "sp148716.exe" -ArgumentList /s, /a, /s -Wait
+    Start-Process -FilePath "sp148716.exe" -ArgumentList /s, /a, /s
 }
 
-# > Install GlobalProtect
-Start-Process -FilePath "GlobalProtect64-6.0.3.msi" -ArgumentList /passive -Wait
-#Start-Process msiexec.exe -ArgumentList "/f a GlobalProtect64-6.0.3.msi /passive" -Wait
+# > Install or repair GlobalProtect
+
+# Query WMI to check if GlobalProtect is already installed, and install or repair it accordingly
+$installCheck = Get-CimInstance -ClassName Win32_Product | Where-Object { $_.Name -like "$vpnSofwareName" }
+
+if ($installCheck) {
+
+    Start-Process -FilePath msiexec.exe -ArgumentList "/fm GlobalProtect64-6.0.3.msi /passive" -Wait
+} 
+
+else {
+
+    Start-Process -FilePath GlobalProtect64-6.0.3.msi -ArgumentList /passive -Wait
+}

@@ -32,7 +32,7 @@ $brandSwUpdateAppShortcutName = $null
 
 if ($deviceManufacturer -like "Dell*") {
 
-    $brandSwUpdateAppPath = "C:\Program Files\WindowsApps\DellInc.DellCommandUpdate_4.5.36.0_x86__htrsf667h5kn2\DCU.Classic\DellCommandUpdate.exe"
+    $brandSwUpdateAppPath = "C:\Program Files (x86)\Dell\CommandUpdate\DellCommandUpdate.exe"
     $brandSwUpdateAppShortcutName = "Dell Command Update.lnk"
 
 }
