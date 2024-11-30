@@ -143,7 +143,7 @@ Remove-Item -Path $tempXmlFile -Force
 
 
 
-<# Start Profiling Processes #>
+<# Start Device Profiling Processes #>
 
 # Change working directory to location of utility tools
 Set-Location -Path $utilityToolsDir
