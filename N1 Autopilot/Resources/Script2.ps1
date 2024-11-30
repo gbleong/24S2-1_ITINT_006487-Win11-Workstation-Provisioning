@@ -1,12 +1,50 @@
 <# Initialize Global Variables #>
 
-# Get the current user's desktop folder path
-$desktopPath = [Environment]::GetFolderPath("Desktop")
+# Get the current folder path where installers are located
+$installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
-<# Start Configuration Processes #>
+# Get the current user's desktop folder path
+$desktopPath = [Environment]::GetFolderPath("Desktop")
+
+# Input GlobalProtect VPN software name
+$vpnSoftwareName = "GlobalProtect"
+
+
+
+<# Start Software Installation Processes #>
+
+# Change working directory to location of installers
+Set-Location -Path $installersDir
+
+# > Install HP Support Assistant
+
+# Check that device manufacturer is HP before installing HP software update application
+if ($deviceManufacturer -like "HP*") {
+
+    Start-Process -FilePath "sp148716.exe" -ArgumentList /s, /a, /s
+}
+
+# > Install or repair GlobalProtect
+
+# Query Win32_Product WMI class to check if GlobalProtect is already installed, and install or repair it accordingly
+$installCheck = Get-CimInstance -ClassName Win32_Product | Where-Object { $_.Name -like "$vpnSofwareName" }
+
+if ($installCheck) {
+
+    Start-Process -FilePath msiexec.exe -ArgumentList "/fm GlobalProtect64-6.0.3.msi /passive" -Wait
+} 
+
+else {
+
+    Start-Process -FilePath GlobalProtect64-6.0.3.msi -ArgumentList /passive -Wait
+}
+
+
+
+<# Start System Configuration Processes #>
 
 # > Set Plugged In and Battery profiles to never turn off display or sleep
 
@@ -63,3 +101,9 @@ $brandSwUpdateAppShortcut.Save()
 
 $winUpdateShortcut.TargetPath = 'ms-settings:windowsupdate'
 $winUpdateShortcut.Save()
+
+<#
+# Pause to keep the console open
+Write-Host "`nPress any key to exit..."
+[System.Console]::ReadKey() | Out-Null
+#>
