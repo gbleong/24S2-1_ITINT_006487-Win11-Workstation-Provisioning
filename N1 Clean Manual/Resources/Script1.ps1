@@ -110,6 +110,14 @@ if ($deviceManufacturer -like "LENOVO*") {
     Start-Process -FilePath "system_update_5.08.02.25.exe" -ArgumentList /SP-, /SILENT
 }
 
+# > Install Adobe Acrobat
+
+Start-Process -FilePath "AcroRdrDCx642200320282_MUI" -ArgumentList /sPB -Wait
+
+# > Install Microsoft Office 365
+
+# > Install Google Chrome
+
 
 
 <# Start System Configuration Processes #>
