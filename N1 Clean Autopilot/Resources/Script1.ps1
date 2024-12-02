@@ -1,4 +1,4 @@
-<# Initialize Global Variables #>
+<# Initialize Global Variables and Functions #>
 
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
@@ -12,7 +12,7 @@ $locAppDataTmpDir = "$env:Temp"
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
-# Query the Win32_BIOS WMI class to get the devie servict tag
+# Get device service tag from Win32_BIOS WMI class
 $serviceTag = (Get-WmiObject -Class Win32_BIOS).SerialNumber
 
 

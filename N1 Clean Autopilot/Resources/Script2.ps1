@@ -1,4 +1,4 @@
-<# Initialize Global Variables #>
+<# Initialize Global Variables and Functions #>
 
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
@@ -10,7 +10,26 @@ $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 $desktopPath = [Environment]::GetFolderPath("Desktop")
 
 # Input GlobalProtect VPN software name
-$vpnSoftwareName = "GlobalProtect"
+$globalprotectAppName = "GlobalProtect*"
+
+$msTeamsAppName = "Microsoft Teams*"
+
+# Function to check for internet connectivity
+function checkInternetConnection {
+
+    try {
+
+        # Test connection using Google's DNS server
+        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet
+        return $response
+    } 
+
+    catch {
+
+        # If an exception occurs, assume no connection
+        return $false
+    }
+}
 
 
 
@@ -30,7 +49,7 @@ if ($deviceManufacturer -like "HP*") {
 # > Install or repair GlobalProtect
 
 # Query Win32_Product WMI class to check if GlobalProtect is already installed, and install or repair it accordingly
-$installCheck = Get-CimInstance -ClassName Win32_Product | Where-Object { $_.Name -like "$vpnSofwareName" }
+$installCheck = Get-CimInstance -ClassName Win32_Product | Where-Object { $_.Name -like "$globalprotectAppName" }
 
 if ($installCheck) {
 
@@ -41,6 +60,30 @@ else {
 
     Start-Process -FilePath GlobalProtect64-6.0.3.msi -ArgumentList /passive -Wait
 }
+
+# > Install Microsoft Teams
+<#
+$installCheck = Get-StartApps | Where-Object { $_.Name -like "$msTeamsAppName" }
+
+if (-not $installCheck) {
+    
+    if (-not (checkInternetConnection)) {
+
+        Write-Host "Waiting for internet connection...`n"
+    
+        while (-not (checkInternetConnection)) {
+    
+            Start-Sleep -Seconds 4
+        }
+    
+        Write-Host "Internet connection established. Continuing with installation...`n"
+    }
+
+
+
+} 
+#>
+
 
 
 
@@ -82,7 +125,7 @@ elseif ($deviceManufacturer -like "LENOVO*") {
 }
 
 # Define the full path for the shortcuts
-$brandSwUpdateAppShortcutPath = Join-Path -Path $desktopPath -ChildPath $brandSwUpdateAppShortcutName
+$brandSwUpdateAppShortcutPath = Join-Path $desktopPath $brandSwUpdateAppShortcutName
 
 $winUpdateShortcutPath = Join-Path $desktopPath 'Windows Update.lnk'
 

@@ -1,4 +1,4 @@
-<# Initialize Global Variables #>
+<# Initialize Global Variables and Functions #>
 
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
@@ -12,8 +12,25 @@ $locAppDataTmpDir = "$env:Temp"
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
-# Query the Win32_BIOS WMI class to get the devie servict tag
+# Get device service tag from Win32_BIOS WMI class
 $serviceTag = (Get-WmiObject -Class Win32_BIOS).SerialNumber
+
+# Function to check for internet connectivity
+function checkInternetConnection {
+
+    try {
+
+        # Test connection using Google's DNS server
+        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet
+        return $response
+    } 
+
+    catch {
+
+        # If an exception occurs, assume no connection
+        return $false
+    }
+}
 
 
 
@@ -112,11 +129,25 @@ if ($deviceManufacturer -like "LENOVO*") {
 
 # > Install Adobe Acrobat
 
-Start-Process -FilePath "AcroRdrDCx642200320282_MUI" -ArgumentList /sPB -Wait
-
-# > Install Microsoft Office 365
+Start-Process -FilePath "AcroRdrDCx642200320282_MUI.exe" -ArgumentList /sPB -Wait
 
 # > Install Google Chrome
+
+if (-not (checkInternetConnection)) {
+
+    Write-Host "Waiting for internet connection...`n"
+
+    while (-not (checkInternetConnection)) {
+
+        Start-Sleep -Seconds 4
+    }
+
+    Write-Host "Internet connection established. Continuing with installation...`n"
+}
+
+Start-Process -FilePath "ChromeSetup.exe" -ArgumentList "/silent /install"
+
+# > Install Microsoft Office 365
 
 
 
