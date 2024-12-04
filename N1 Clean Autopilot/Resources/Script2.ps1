@@ -3,8 +3,8 @@
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
-# Get device manufacturer information
-$deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
+# Get the folder path for temporary local app data files
+$locAppDataTmpDir = $env:Temp
 
 # Get the current user's desktop folder path
 $desktopPath = [Environment]::GetFolderPath("Desktop")
@@ -12,7 +12,11 @@ $desktopPath = [Environment]::GetFolderPath("Desktop")
 # Input GlobalProtect VPN software name
 $globalprotectAppName = "GlobalProtect*"
 
+# Input Microsoft Teams software name
 $msTeamsAppName = "Microsoft Teams*"
+
+# Get device manufacturer information
+$deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
 # Function to check for internet connectivity
 function checkInternetConnection {
@@ -62,14 +66,14 @@ else {
 }
 
 # > Install Microsoft Teams
-<#
+
 $installCheck = Get-StartApps | Where-Object { $_.Name -like "$msTeamsAppName" }
 
 if (-not $installCheck) {
     
     if (-not (checkInternetConnection)) {
 
-        Write-Host "Waiting for internet connection...`n"
+        Write-Host "Waiting for internet connection..."
     
         while (-not (checkInternetConnection)) {
     
@@ -79,10 +83,38 @@ if (-not $installCheck) {
         Write-Host "Internet connection established. Continuing with installation...`n"
     }
 
+    try {
 
+        Get-AppxPackage -all $msTeamsAppName | Remove-AppxPackage -allusers
+        reg delete "HKLM\SOFTWARE\WOW6432Node\Microsoft\Office\Teams" /f >$null 2>&1
 
+        $tempMsTeamsInstallerPath = Join-Path "$locAppDataTmpDir" "msTeamsInstaller"
+
+        # Check for and clean up temporary folder for installer files
+        if (Test-Path $tempMsTeamsInstallerPath) {
+
+            Remove-Item -Path $tempMsTeamsInstallerPath -Recurse -Force
+        }
+        New-Item -ItemType Directory -Path $tempMsTeamsInstallerPath -Force
+
+        $msTeamsX64MsixDlLink = "https://statics.teams.cdn.office.net/production-windows-x64/enterprise/webview2/lkg/MSTeams-x64.msix"
+        $msTeamsBootStrapperDlLink = "https://statics.teams.cdn.office.net/production-teamsprovision/lkg/teamsbootstrapper.exe"
+
+        Start-BitsTransfer -Source $msTeamsX64MsixDlLink -Destination "$tempMsTeamsInstallerPath\MSTeams-x64.msix"
+        Start-BitsTransfer -Source $msTeamsBootStrapperDlLink -Destination "$tempMsTeamsInstallerPath\teamsbootstrapper.exe"
+
+        & "$tempMsTeamsInstallerPath\teamsbootstrapper.exe" -p -o "$tempMsTeamsInstallerPath\MSTeams-x64.msix" >$null 2>&1
+
+        # Delete temporary folder for installer files
+        Remove-Item -Path $tempMsTeamsInstallerPath -Recurse -Force
+    } 
+    
+    catch {
+
+        Write-Error "Microsoft Teams installation failed. Process will be skipped."
+    }
 } 
-#>
+
 
 
 

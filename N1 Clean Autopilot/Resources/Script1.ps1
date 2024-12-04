@@ -7,7 +7,7 @@ $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "In
 $utilityToolsDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Utility Tools"
 
 # Get the folder path for temporary local app data files
-$locAppDataTmpDir = "$env:Temp"
+$locAppDataTmpDir = $env:Temp
 
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
