@@ -119,6 +119,9 @@ if ($deviceManufacturer -like "LENOVO*") {
 # Define path for temporary XML file
 $tempXmlFile = "$locAppDataTmpDir\AppAssoc.xml"
 
+# Clean up any existing folders before proceeding
+Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
+
 # Export current default app associations into temporary XML file
 dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile | Out-Null
 
@@ -132,14 +135,15 @@ $pdfAssociationNode = $xmlContent.SelectSingleNode("//Association[@Identifier='.
 $pdfAssociationNode.ProgId = "Acrobat.Document.DC"
 $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 
-# Save changes back to temporary XML file
+# Save changes back to temporary XML file, and pause to allow file operations to finish
 $xmlContent.Save($tempXmlFile)
+Start-Sleep -Seconds 2
 
 # Import updated default app associations from temporary XML file
 dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile | Out-Null
 
 # Delete temporary XML file
-Remove-Item -Path $tempXmlFile -Force
+Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 
 
 
@@ -148,15 +152,11 @@ Remove-Item -Path $tempXmlFile -Force
 # Change working directory to location of utility tools
 Set-Location -Path $utilityToolsDir
 
-# Output device Service Tag
+# Output device service tag
 Write-Host "Service Tag: $serviceTag"
 
-# Get the LAN Ethernet MAC address and store it in a variable
-$EthernetMACAddress = Get-CimInstance -ClassName Win32_NetworkAdapter |
-    Where-Object {
-        $_.NetConnectionID -eq "Ethernet" -and $_.MACAddress -ne $null
-    } |
-    Select-Object -ExpandProperty MACAddress -First 1
+# Get the LAN Ethernet MAC address by querying Win32_NetworkAdapter class and filtering results
+$EthernetMACAddress = Get-CimInstance -ClassName Win32_NetworkAdapter | Where-Object { $_.NetConnectionID -eq "Ethernet" -and $_.MACAddress -ne $null } | Select-Object -ExpandProperty MACAddress
 
 # Output device LAN ethernet MAC address
 Write-Host "LAN Ethernet MAC Address: $EthernetMACAddress"

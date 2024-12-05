@@ -67,10 +67,13 @@ else {
 
 # > Install Microsoft Teams
 
+# Check if Microsoft Teams is already installed and functional by looking for its name in the list of start apps
 $installCheck = Get-StartApps | Where-Object { $_.Name -like "$msTeamsAppName" }
 
+# If Microsoft Teams is not installed, proceed with the installation process
 if (-not $installCheck) {
     
+    # Check that an active internet connection exists. Alert user and prevent installation process from proceeding otherwise
     if (-not (checkInternetConnection)) {
 
         Write-Host "Waiting for internet connection..."
@@ -85,32 +88,35 @@ if (-not $installCheck) {
 
     try {
 
-        Get-AppxPackage -all $msTeamsAppName | Remove-AppxPackage -allusers
+        # Attempt to remove any existing Microsoft Teams applications and registry keys for all users, if they exist to ensure clean installation
+        Get-AppxPackage -All $msTeamsAppName | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
         reg delete "HKLM\SOFTWARE\WOW6432Node\Microsoft\Office\Teams" /f >$null 2>&1
 
+        # Input temporary directory path for storing Teams installer files
         $tempMsTeamsInstallerPath = Join-Path "$locAppDataTmpDir" "msTeamsInstaller"
 
-        # Check for and clean up temporary folder for installer files
-        if (Test-Path $tempMsTeamsInstallerPath) {
+        # Clean up existing folders before creating a new temporary directory for installer files
+        Remove-Item -Path $tempMsTeamsInstallerPath -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Path $tempMsTeamsInstallerPath -Force | Out-Null
 
-            Remove-Item -Path $tempMsTeamsInstallerPath -Recurse -Force
-        }
-        New-Item -ItemType Directory -Path $tempMsTeamsInstallerPath -Force
-
+        # Input URLs for downloading the Microsoft Teams installer files
         $msTeamsX64MsixDlLink = "https://statics.teams.cdn.office.net/production-windows-x64/enterprise/webview2/lkg/MSTeams-x64.msix"
         $msTeamsBootStrapperDlLink = "https://statics.teams.cdn.office.net/production-teamsprovision/lkg/teamsbootstrapper.exe"
 
+        # Download files using BITS (Background Intelligent Transfer Service) to temporary directory
         Start-BitsTransfer -Source $msTeamsX64MsixDlLink -Destination "$tempMsTeamsInstallerPath\MSTeams-x64.msix"
         Start-BitsTransfer -Source $msTeamsBootStrapperDlLink -Destination "$tempMsTeamsInstallerPath\teamsbootstrapper.exe"
 
+        # Provision Teams app with installation files
         & "$tempMsTeamsInstallerPath\teamsbootstrapper.exe" -p -o "$tempMsTeamsInstallerPath\MSTeams-x64.msix" >$null 2>&1
 
         # Delete temporary folder for installer files
-        Remove-Item -Path $tempMsTeamsInstallerPath -Recurse -Force
+        Remove-Item -Path $tempMsTeamsInstallerPath -Recurse -Force -ErrorAction SilentlyContinue
     } 
     
     catch {
 
+        # Log error message if installation process fails for any reason
         Write-Error "Microsoft Teams installation failed. Process will be skipped."
     }
 } 
