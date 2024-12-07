@@ -90,9 +90,13 @@ do {
 
 Stop-Process -Name "SetupBD" -Force
 
-# > Install Comber
+# > Install Lenovo System Update
 
-Start-Process -FilePath "Comber x64 1.0.1.0.exe" -ArgumentList /v"/passive" -Wait
+# Check that device manufacturer is Lenovo before installing Lenovo-specific software update application
+if ($deviceManufacturer -like "LENOVO*") {
+
+    Start-Process -FilePath "system_update_5.08.02.25.exe" -ArgumentList /SP-, /SILENT
+}
 
 # > Install Dell Command Update
 
@@ -102,13 +106,9 @@ if ($deviceManufacturer -like "Dell*") {
     Start-Process -FilePath "Dell-Command-Update-Application_T45GH_WIN_5.3.0_A00.exe" -ArgumentList /passthrough, /v"/passive" -Wait
 }
 
-# > Install Lenovo System Update
+# > Install Comber
 
-# Check that device manufacturer is Lenovo before installing Lenovo-specific software update application
-if ($deviceManufacturer -like "LENOVO*") {
-
-    Start-Process -FilePath "system_update_5.08.02.25.exe" -ArgumentList /SP-, /SILENT
-}
+Start-Process -FilePath "Comber x64 1.0.1.0.exe" -ArgumentList /v"/passive" -Wait
 
 
 

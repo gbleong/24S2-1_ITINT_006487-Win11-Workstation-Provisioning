@@ -107,18 +107,6 @@ do {
 
 Stop-Process -Name "SetupBD" -Force
 
-# > Install Comber
-
-Start-Process -FilePath "Comber x64 1.0.1.0.exe" -ArgumentList /v"/passive" -Wait
-
-# > Install Dell Command Update
-
-# Check that device manufacturer is Dell before installing Dell-specific software update application
-if ($deviceManufacturer -like "Dell*") {
-
-    Start-Process -FilePath "Dell-Command-Update-Application_T45GH_WIN_5.3.0_A00.exe" -ArgumentList /passthrough, /v"/passive" -Wait
-}
-
 # > Install Lenovo System Update
 
 # Check that device manufacturer is Lenovo before installing Lenovo-specific software update application
@@ -127,9 +115,13 @@ if ($deviceManufacturer -like "LENOVO*") {
     Start-Process -FilePath "system_update_5.08.02.25.exe" -ArgumentList /SP-, /SILENT
 }
 
-# > Install Adobe Acrobat
+# > Install HP Support Assistant
 
-Start-Process -FilePath "AcroRdrDCx642200320282_MUI.exe" -ArgumentList /sPB -Wait
+# Check that device manufacturer is HP before installing HP software update application
+if ($deviceManufacturer -like "HP*") {
+
+    Start-Process -FilePath "sp148716.exe" -ArgumentList /s, /a, /s
+}
 
 # > Install Google Chrome
 
@@ -148,6 +140,24 @@ if (-not (checkInternetConnection)) {
 Start-Process -FilePath "ChromeSetup.exe" -ArgumentList "/silent /install"
 
 # > Install Microsoft Office 365
+
+Start-Process -FilePath ".\M365 Offline Installer 12-3-2024\setup.exe" -ArgumentList '/configure ".\M365 Offline Installer 12-3-2024\Configuration365.xml"'
+
+# > Install Dell Command Update
+
+# Check that device manufacturer is Dell before installing Dell-specific software update application
+if ($deviceManufacturer -like "Dell*") {
+
+    Start-Process -FilePath "Dell-Command-Update-Application_T45GH_WIN_5.3.0_A00.exe" -ArgumentList /passthrough, /v"/passive" -Wait
+}
+
+# > Install Comber
+
+Start-Process -FilePath "Comber x64 1.0.1.0.exe" -ArgumentList /v"/passive" -Wait
+
+# > Install Adobe Acrobat
+
+Start-Process -FilePath "AcroRdrDCx642200320282_MUI.exe" -ArgumentList /sPB -Wait
 
 
 
