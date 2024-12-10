@@ -162,24 +162,21 @@ elseif ($deviceManufacturer -like "LENOVO*") {
     $brandSwUpdateAppShortcutName = "Lenovo System Update.lnk"
 }
 
-# Define the full path for the shortcuts
-$brandSwUpdateAppShortcutPath = Join-Path $desktopPath $brandSwUpdateAppShortcutName
-
-$winUpdateShortcutPath = Join-Path $desktopPath 'Windows Update.lnk'
-
 # Create a new WScript.Shell COM object
 $wshShell = New-Object -ComObject WScript.Shell
 
-# Create the shortcuts
-$brandSwUpdateAppShortcut = $wshShell.CreateShortcut($brandSwUpdateAppShortcutPath)
+# Create the shortcuts, and set their target paths and other necessary properties
+if ($null -ne $brandSwUpdateAppPath) {
 
+    $brandSwUpdateAppShortcutPath = Join-Path $desktopPath $brandSwUpdateAppShortcutName
+    $brandSwUpdateAppShortcut = $wshShell.CreateShortcut($brandSwUpdateAppShortcutPath)
+    $brandSwUpdateAppShortcut.TargetPath = $brandSwUpdateAppPath
+    $brandSwUpdateAppShortcut.WorkingDirectory = (Split-Path -Path $brandSwUpdateAppPath)
+    $brandSwUpdateAppShortcut.Save()
+}
+
+$winUpdateShortcutPath = Join-Path $desktopPath 'Windows Update.lnk'
 $winUpdateShortcut = $wshShell.CreateShortcut($winUpdateShortcutPath)
-
-# Set the target paths and other shortcut properties
-$brandSwUpdateAppShortcut.TargetPath = $brandSwUpdateAppPath
-$brandSwUpdateAppShortcut.WorkingDirectory = (Split-Path -Path $brandSwUpdateAppPath)
-$brandSwUpdateAppShortcut.Save()
-
 $winUpdateShortcut.TargetPath = 'ms-settings:windowsupdate'
 $winUpdateShortcut.Save()
 

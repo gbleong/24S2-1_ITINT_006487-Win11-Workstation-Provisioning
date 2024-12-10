@@ -131,13 +131,12 @@ $xmlContent = [xml] (Get-Content -Path $tempXmlFile)
 # Locate association node corresponding to files with the .pdf extension
 $pdfAssociationNode = $xmlContent.SelectSingleNode("//Association[@Identifier='.pdf']")
 
-# Update ProgId and ApplicationName in .pdf associate node to specify Adobe Acrobat as default app for .pdf files
+# Update ProgId and ApplicationName variables in .pdf associate node to specify Adobe Acrobat as default app for .pdf files
 $pdfAssociationNode.ProgId = "Acrobat.Document.DC"
 $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 
-# Save changes back to temporary XML file, and pause to allow file operations to finish
+# Save changes back to temporary XML file
 $xmlContent.Save($tempXmlFile)
-Start-Sleep -Seconds 2
 
 # Import updated default app associations from temporary XML file
 dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile | Out-Null
@@ -152,74 +151,19 @@ Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 # Change working directory to location of utility tools
 Set-Location -Path $utilityToolsDir
 
-# Output device service tag
-Write-Host "Service Tag: $serviceTag"
+# > Display device service tag
+Write-Host "Service Tag: $serviceTag`n"
 
-# Get the LAN Ethernet MAC address by querying Win32_NetworkAdapter class and filtering results
-$EthernetMACAddress = Get-CimInstance -ClassName Win32_NetworkAdapter | Where-Object { $_.NetConnectionID -eq "Ethernet" -and $_.MACAddress -ne $null } | Select-Object -ExpandProperty MACAddress
+# > Display device network adapter information
 
-# Output device LAN ethernet MAC address
-Write-Host "LAN Ethernet MAC Address: $EthernetMACAddress"
+# Use the Get-CimInstance cmdlet to query network adapters for relevant information, store it as a string in a variable, and output it
+$netAdapterInfo = Get-CimInstance -ClassName Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
+Write-Host "Network Adapters:`n$netAdapterInfo"
+
+# > Display storage drive serial number
 
 # Open CrystalDiskInfo utility
 Start-Process -FilePath ".\CrystalDiskInfo8_12_0\DiskInfo64.exe" -Wait
-
-<# Import device profile to csv file (TBC)
-# Path to the file containing the drive information
-$filePath = ".\cdiSample.txt"
-
-# Initialize variables to store serial numbers of internal drives
-$storagedrives = @()
-
-# Read the file line by line
-$fileContent = Get-Content -Path $filePath
-
-# Variables to track drive type and serial number
-$currentDriveType = ""
-$currentSerial = ""
-
-foreach ($line in $fileContent) {
-    # Check if the line contains information about a new drive
-    if ($line -match "^\s*\(\d+\)\s+(.*?)\s+:") {
-        # When starting a new drive, reset current drive type and serial
-        $currentDriveType = ""
-        $currentSerial = ""
-    }
-
-    # Check for drive serial number
-    if ($line -match "^\s*Serial Number\s+:\s+(.*)") {
-        $currentSerial = $matches[1]
-    }
-
-    # Check for USB or internal indicator
-    if ($line -match "^\s*Interface\s+:\s+(.*)") {
-        $interface = $matches[1]
-        if ($interface -match "UASP|USB") {
-            $currentDriveType = "External"
-        } else {
-            $currentDriveType = "Internal"
-        }
-    }
-
-    # Process internal drive information
-    if ($currentDriveType -eq "Internal" -and $currentSerial -ne "") {
-        $storagedrives += $currentSerial
-        # Clear current drive type to prevent duplicates
-        $currentDriveType = ""
-    }
-}
-
-# Store the serials in variables dynamically
-for ($i = 0; $i -lt $storagedrives.Count; $i++) {
-    Set-Variable -Name "storagedrive$($i + 1)" -Value $storagedrives[$i]
-}
-
-# Output the variables for verification
-Write-Host "Internal Storage Drives and their Serial Numbers:"
-for ($i = 0; $i -lt $storagedrives.Count; $i++) {
-    Write-Host "storagedrive$($i + 1): $($storagedrives[$i])"
-}
-#>
 
 <#
 # Pause to keep the console open
