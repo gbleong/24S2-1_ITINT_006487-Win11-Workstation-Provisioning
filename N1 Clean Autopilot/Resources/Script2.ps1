@@ -18,6 +18,8 @@ $msTeamsAppName = "Microsoft Teams*"
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
+
+
 # Function to check for internet connectivity
 function checkInternetConnection {
 
@@ -52,8 +54,8 @@ if ($deviceManufacturer -like "HP*") {
 
 # > Install or repair GlobalProtect
 
-# Query Win32_Product WMI class to check if GlobalProtect is already installed, and install or repair it accordingly
-$installCheck = Get-CimInstance -ClassName Win32_Product | Where-Object { $_.Name -like "$globalprotectAppName" }
+# Query WMI Win32_Product class for applications installed via MSI to check if GlobalProtect is already installed, and install or repair it accordingly
+$installCheck = Get-WmiObject Win32_Product | Where-Object { $_.Name -like "$globalprotectAppName" }
 
 if ($installCheck) {
 
@@ -103,9 +105,12 @@ if (-not $installCheck) {
         $msTeamsX64MsixDlLink = "https://statics.teams.cdn.office.net/production-windows-x64/enterprise/webview2/lkg/MSTeams-x64.msix"
         $msTeamsBootStrapperDlLink = "https://statics.teams.cdn.office.net/production-teamsprovision/lkg/teamsbootstrapper.exe"
 
-        # Download files using BITS (Background Intelligent Transfer Service) to temporary directory
-        Start-BitsTransfer -Source $msTeamsX64MsixDlLink -Destination "$tempMsTeamsInstallerPath\MSTeams-x64.msix"
-        Start-BitsTransfer -Source $msTeamsBootStrapperDlLink -Destination "$tempMsTeamsInstallerPath\teamsbootstrapper.exe"
+        # Download files using System.Net.WebClient class
+        $webClient = New-Object System.Net.WebClient
+        $webClient.DownloadFile($msTeamsX64MsixDlLink, "$tempMsTeamsInstallerPath\MSTeams-x64.msix")
+        $webClient.DownloadFile($msTeamsBootStrapperDlLink, "$tempMsTeamsInstallerPath\teamsbootstrapper.exe")
+        $webClient.Dispose()
+        $webClient = $null
 
         # Provision Teams app with installation files
         & "$tempMsTeamsInstallerPath\teamsbootstrapper.exe" -p -o "$tempMsTeamsInstallerPath\MSTeams-x64.msix" >$null 2>&1
@@ -120,8 +125,6 @@ if (-not $installCheck) {
         Write-Error "Microsoft Teams installation failed. Process will be skipped."
     }
 } 
-
-
 
 
 
@@ -175,10 +178,13 @@ if ($null -ne $brandSwUpdateAppPath) {
     $brandSwUpdateAppShortcut.Save()
 }
 
-$winUpdateShortcutPath = Join-Path $desktopPath 'Windows Update.lnk'
+$winUpdateShortcutPath = Join-Path $desktopPath "Windows Update.lnk"
 $winUpdateShortcut = $wshShell.CreateShortcut($winUpdateShortcutPath)
-$winUpdateShortcut.TargetPath = 'ms-settings:windowsupdate'
+$winUpdateShortcut.TargetPath = "ms-settings:windowsupdate"
 $winUpdateShortcut.Save()
+
+[System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
+$wshShell = $null
 
 <#
 # Pause to keep the console open

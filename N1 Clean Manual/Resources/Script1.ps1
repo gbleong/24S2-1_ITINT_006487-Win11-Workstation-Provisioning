@@ -12,8 +12,16 @@ $locAppDataTmpDir = $env:Temp
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
+# Get device model information
+$deviceModel = (Get-WmiObject Win32_ComputerSystem).Model
+
 # Get device service tag from Win32_BIOS WMI class
-$serviceTag = (Get-WmiObject -Class Win32_BIOS).SerialNumber
+$serviceTag = (Get-WmiObject Win32_BIOS).SerialNumber
+
+# Input deployed Dell device models that uses Dell Encryption for storage drives
+$ddsDeviceModels = @("Latitude 5300", "Latitude 5310", "Precision 7750")
+
+
 
 # Function to check for internet connectivity
 function checkInternetConnection {
@@ -105,7 +113,7 @@ do {
     
 } while (-not $targetWzseTmpFolder)
 
-Stop-Process -Name "SetupBD" -Force
+Stop-Process -Name "SetupBD" -Force -ErrorAction SilentlyContinue
 
 # > Install Lenovo System Update
 
@@ -159,13 +167,17 @@ Start-Process -FilePath "Comber x64 1.0.1.0.exe" -ArgumentList /v"/passive" -Wai
 
 Start-Process -FilePath "AcroRdrDCx642200320282_MUI.exe" -ArgumentList /sPB -Wait
 
-# > Install Dell Data Security Console
-<#
-Start-Process regedit.exe -ArgumentList '/s ".\Dell Data Encryption\Dell Encryption Entitlement.reg"' -Wait
+# > Install Dell Encryption Management Agent
 
-& ".\Dell Data Encryption\DDSSetup.exe" /s /z"\"EXTRACT_INSTALLERS=C:\Users\General\Downloads""
+if ($ddsDeviceModels | ForEach-Object { $_ -like $deviceModel }) {
 
-#>
+    Start-Process regedit.exe -ArgumentList '/s ".\Dell Data Encryption\Dell Encryption Entitlement.reg"' -Wait
+
+    $tempDdsInstallersPath = Join-Path "$locAppDataTmpDir" "ddsInstallers"
+
+    Start-Process -FilePath ".\Dell Data Encryption\DDSSetup.exe" -ArgumentList /s /z"\"EXTRACT_INSTALLERS=$tempDdsInstallersPath"" -Wait
+}
+
 
 
 <# Start System Configuration Processes #>
@@ -212,8 +224,8 @@ Write-Host "Service Tag: $serviceTag`n"
 
 # > Display device network adapter information
 
-# Use the Get-CimInstance cmdlet to query network adapters for relevant information, store it as a string in a variable, and output it
-$netAdapterInfo = Get-CimInstance -ClassName Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
+# Query WMI Win32_NetworkAdapter class for relevant information, store it as a string in a variable, and output it
+$netAdapterInfo = Get-WmiObject Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
 Write-Host "Network Adapters:`n$netAdapterInfo"
 
 # > Display storage drive serial number

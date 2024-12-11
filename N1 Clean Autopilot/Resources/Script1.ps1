@@ -13,7 +13,7 @@ $locAppDataTmpDir = $env:Temp
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
 
 # Get device service tag from Win32_BIOS WMI class
-$serviceTag = (Get-WmiObject -Class Win32_BIOS).SerialNumber
+$serviceTag = (Get-WmiObject Win32_BIOS).SerialNumber
 
 
 
@@ -88,7 +88,7 @@ do {
     
 } while (-not $targetWzseTmpFolder)
 
-Stop-Process -Name "SetupBD" -Force
+Stop-Process -Name "SetupBD" -Force -ErrorAction SilentlyContinue
 
 # > Install Lenovo System Update
 
@@ -156,8 +156,8 @@ Write-Host "Service Tag: $serviceTag`n"
 
 # > Display device network adapter information
 
-# Use the Get-CimInstance cmdlet to query network adapters for relevant information, store it as a string in a variable, and output it
-$netAdapterInfo = Get-CimInstance -ClassName Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
+# Query WMI Win32_NetworkAdapter class for relevant information, store it as a string in a variable, and output it
+$netAdapterInfo = Get-WmiObject Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
 Write-Host "Network Adapters:`n$netAdapterInfo"
 
 # > Display storage drive serial number
