@@ -173,9 +173,14 @@ if ($ddsDeviceModels | ForEach-Object { $_ -like $deviceModel }) {
 
     Start-Process regedit.exe -ArgumentList '/s ".\Dell Data Encryption\Dell Encryption Entitlement.reg"' -Wait
 
-    $tempDdsInstallersPath = Join-Path "$locAppDataTmpDir" "ddsInstallers"
+    $tempDdsInstallersPath = Join-Path "$locAppDataTmpDir" "dds Installers"
 
-    Start-Process -FilePath ".\Dell Data Encryption\DDSSetup.exe" -ArgumentList /s /z"\"EXTRACT_INSTALLERS=$tempDdsInstallersPath"" -Wait
+    # Clean up existing folders before creating a new temporary directory for installer files
+    Remove-Item -Path $tempDdsInstallersPath -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $tempDdsInstallersPath -Force | Out-Null
+
+    Start-Process -FilePath ".\Dell Data Encryption\DDSSetup.exe" -ArgumentList /s, /z"`"EXTRACT_INSTALLERS=$tempDdsInstallersPath`"" -Wait
+    # Extracts properly if folder name has spaces in between
 }
 
 

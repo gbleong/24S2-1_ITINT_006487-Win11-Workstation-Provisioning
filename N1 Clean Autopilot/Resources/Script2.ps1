@@ -113,7 +113,7 @@ if (-not $installCheck) {
         $webClient = $null
 
         # Provision Teams app with installation files
-        & "$tempMsTeamsInstallerPath\teamsbootstrapper.exe" -p -o "$tempMsTeamsInstallerPath\MSTeams-x64.msix" >$null 2>&1
+        Start-Process -FilePath "$tempMsTeamsInstallerPath\teamsbootstrapper.exe" -ArgumentList "-p", "-o", "$tempMsTeamsInstallerPath\MSTeams-x64.msix" -Wait
 
         # Delete temporary folder for installer files
         Remove-Item -Path $tempMsTeamsInstallerPath -Recurse -Force -ErrorAction SilentlyContinue
