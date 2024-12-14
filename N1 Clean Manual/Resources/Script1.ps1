@@ -6,6 +6,9 @@ $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "In
 # Get the current folder path where utility tools are located
 $utilityToolsDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Utility Tools"
 
+# Get the current folder path where credential files are located
+$credentialFilesDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Credential Files"
+
 # Get the folder path for temporary local app data files
 $locAppDataTmpDir = $env:Temp
 
@@ -65,7 +68,7 @@ foreach ($folder in $locAppDataTmpFolders) {
 
     if ($folder.Name -match "^WZSE\d+\.TMP$") {
 
-        Remove-Item -Path $folder.FullName -Recurse -Force -ErrorAction Stop
+        Remove-Item -Path $folder.FullName -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -167,20 +170,28 @@ Start-Process -FilePath "Comber x64 1.0.1.0.exe" -ArgumentList /v"/passive" -Wai
 
 Start-Process -FilePath "AcroRdrDCx642200320282_MUI.exe" -ArgumentList /sPB -Wait
 
-# > Install Dell Encryption Management Agent
+# > Install Dell Encryption software
 
+# Check that Dell device model is compatible before installing Dell Encryption software
 if ($ddsDeviceModels | ForEach-Object { $_ -like $deviceModel }) {
 
+    # Add Dell Encryption entitlement registry entry silently
     Start-Process regedit.exe -ArgumentList '/s ".\Dell Data Encryption\Dell Encryption Entitlement.reg"' -Wait
 
-    $tempDdsInstallersPath = Join-Path "$locAppDataTmpDir" "dds Installers"
+    # Input temporary directory path for storing Dell Encryption software installer files
+    $tempDdsInstallersPath = Join-Path $locAppDataTmpDir "DDS Installers"
 
     # Clean up existing folders before creating a new temporary directory for installer files
     Remove-Item -Path $tempDdsInstallersPath -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $tempDdsInstallersPath -Force | Out-Null
 
+    # Extract the Dell Encryption setup files into the temporary directory, and install all necessary software
     Start-Process -FilePath ".\Dell Data Encryption\DDSSetup.exe" -ArgumentList /s, /z"`"EXTRACT_INSTALLERS=$tempDdsInstallersPath`"" -Wait
-    # Extracts properly if folder name has spaces in between
+    Start-Process -FilePath "$tempDdsInstallersPath\Prerequisites\Prereq_64bit_setup.exe" -ArgumentList /v"/passive" -Wait
+    Start-Process -FilePath "$tempDdsInstallersPath\Encryption Management Agent\EMAgent_64bit_setup.exe" -ArgumentList '/v"/passive /norestart"' -Wait
+
+    # Delete temporary folder for installer files
+    Remove-Item -Path $tempDdsInstallersPath -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 
@@ -216,6 +227,38 @@ dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile | Out-Null
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
+
+# Change working directory to location of credential files
+Set-Location -Path $credentialFilesDir
+
+# > Create Windows local admin user accounts
+
+$n1WinLocalAdminCredFile = "N1 Windows Local Admin Credentials.csv"
+
+if (Test-Path $n1WinLocalAdminCredFile) {
+
+    $accounts = Import-Csv -Path $n1WinLocalAdminCredFile
+
+    foreach ($account in $accounts) {
+
+        $username = $account.Username
+        $password = $account.Password
+
+        # Create user account
+        New-LocalUser -Name $username -password (ConvertTo-SecureString $password -AsPlainText -Force) -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
+
+        # Add the user to the Administrators group
+        Add-LocalGroupMember -Group "Administrators" -Member $username
+
+        # Remove the user from the Users group
+        Remove-LocalGroupMember -Group "Users" -Member $username
+    }
+} 
+
+else {
+
+    Write-Host "Windows local admin user accounts creation failed. Process will be skipped."
+}
 
 
 

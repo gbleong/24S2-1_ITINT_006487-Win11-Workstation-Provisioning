@@ -40,7 +40,7 @@ foreach ($folder in $locAppDataTmpFolders) {
 
     if ($folder.Name -match "^WZSE\d+\.TMP$") {
 
-        Remove-Item -Path $folder.FullName -Recurse -Force -ErrorAction Stop
+        Remove-Item -Path $folder.FullName -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 

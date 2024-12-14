@@ -1,16 +1,10 @@
 <# Initialize Global Variables and Functions #>
 
-# Get the current folder path where installers are located
-$installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
-
 # Get the folder path for temporary local app data files
 $locAppDataTmpDir = $env:Temp
 
 # Get the current user's desktop folder path
 $desktopPath = "$env:USERPROFILE\Desktop"
-
-# Input GlobalProtect VPN software name
-$globalprotectAppName = "GlobalProtect*"
 
 # Input Microsoft Teams software name
 $msTeamsAppName = "Microsoft Teams*"
@@ -38,32 +32,6 @@ function checkInternetConnection {
 
 
 <# Start Software Installation Processes #>
-
-# Change working directory to location of installers
-Set-Location -Path $installersDir
-
-# > Install HP Support Assistant
-
-# Check that device manufacturer is HP before installing HP software update application
-if ($deviceManufacturer -like "HP*") {
-
-    Start-Process -FilePath "sp148716.exe" -ArgumentList /s, /a, /s
-}
-
-# > Install or repair GlobalProtect
-
-# Query WMI Win32_Product class for applications installed via MSI to check if GlobalProtect is already installed, and install or repair it accordingly
-$installCheck = Get-WmiObject Win32_Product | Where-Object { $_.Name -like "$globalprotectAppName" }
-
-if ($installCheck) {
-
-    Start-Process -FilePath msiexec.exe -ArgumentList "/fm GlobalProtect64-6.0.3.msi /passive" -Wait
-} 
-
-else {
-
-    Start-Process -FilePath "GlobalProtect64-6.0.3.msi" -ArgumentList /passive -Wait
-}
 
 # > Install Microsoft Teams
 
@@ -127,6 +95,47 @@ if (-not $installCheck) {
 
 
 <# Start System Configuration Processes #>
+
+# > Delete redundant Windows user accounts
+
+# Path to the CSV file containing the allowed usernames
+$CsvFilePath = "C:\Path\To\Your\Accounts.csv"
+
+# Function to retrieve all local user accounts
+function Get-LocalAccounts {
+    Get-LocalUser | Where-Object { 
+        $_.Name -notmatch "^DefaultAccount|^WDAGUtilityAccount|^Guest|^Administrator|^crdsecagent\$admin$"
+    }
+}
+
+# Check if the CSV file exists
+if (Test-Path $CsvFilePath) {
+    # Import the list of allowed usernames from the CSV
+    $AllowedAccounts = Import-Csv -Path $CsvFilePath | Select-Object -ExpandProperty UserName
+
+    # Get a list of all local user accounts (excluding system accounts)
+    $LocalAccounts = Get-LocalAccounts
+
+    foreach ($Account in $LocalAccounts) {
+        $UserName = $Account.Name
+
+        # Check if the username is not in the list of allowed accounts
+        if ($UserName -notin $AllowedAccounts) {
+            Write-Host "Deleting user account: $UserName"
+            try {
+                # Remove the user account
+                Remove-LocalUser -Name $UserName
+                Write-Host "Successfully deleted user account: $UserName"
+            } catch {
+                Write-Host "Failed to delete user account: $UserName. Error: $_"
+            }
+        } else {
+            Write-Host "Skipping allowed user account: $UserName"
+        }
+    }
+} else {
+    Write-Host "CSV file not found at $CsvFilePath. Please provide a valid path."
+}
 
 # > Set Plugged In and Battery profiles to never turn off display or sleep
 
