@@ -95,48 +95,55 @@ if (-not $installCheck) {
 
 
 <# Start System Configuration Processes #>
+<#
+# Change working directory to location of credential files
+Set-Location -Path $credentialFilesDir
 
-# > Delete redundant Windows user accounts
+# > Delete redundant Windows user accounts WIP
 
-# Path to the CSV file containing the allowed usernames
-$CsvFilePath = "C:\Path\To\Your\Accounts.csv"
+$n1WinLocalAdminCredFile = "N1 Windows Local Admin Credentials.csv"
 
-# Function to retrieve all local user accounts
-function Get-LocalAccounts {
-    Get-LocalUser | Where-Object { 
-        $_.Name -notmatch "^DefaultAccount|^WDAGUtilityAccount|^Guest|^Administrator|^crdsecagent\$admin$"
-    }
-}
+if (Test-Path $n1WinLocalAdminCredFile) {
 
-# Check if the CSV file exists
-if (Test-Path $CsvFilePath) {
-    # Import the list of allowed usernames from the CSV
-    $AllowedAccounts = Import-Csv -Path $CsvFilePath | Select-Object -ExpandProperty UserName
+    # Import list of allowed usernames from the CSV file containing credentials for N1 Windows local admin accounts
+    $n1AdminAccounts = Import-Csv -Path $n1WinLocalAdminCredFile | Select-Object -ExpandProperty Username
 
-    # Get a list of all local user accounts (excluding system accounts)
-    $LocalAccounts = Get-LocalAccounts
+    # Get a list of all local user accounts excluding system default accounts
+    $existingLocalAccounts = Get-LocalUser | Where-Object { $_.Name -notmatch "^DefaultAccount|^WDAGUtilityAccount|^Guest|^Administrator|^crdsecagent\$admin$" }
 
-    foreach ($Account in $LocalAccounts) {
-        $UserName = $Account.Name
+    foreach ($account in $existingLocalAccounts) {
+
+        $Username = $account.Username
 
         # Check if the username is not in the list of allowed accounts
-        if ($UserName -notin $AllowedAccounts) {
-            Write-Host "Deleting user account: $UserName"
+        if ($Username -notin $n1AdminAccounts) {
+
+            Write-Host "Deleting user account: $Username"
+
             try {
+
                 # Remove the user account
-                Remove-LocalUser -Name $UserName
-                Write-Host "Successfully deleted user account: $UserName"
-            } catch {
-                Write-Host "Failed to delete user account: $UserName. Error: $_"
+                Remove-LocalUser -Name $Username
+                Write-Host "Successfully deleted user account: $Username"
+            } 
+            
+            catch {
+
+                Write-Host "Failed to delete user account: $Username. Error: $_"
             }
-        } else {
-            Write-Host "Skipping allowed user account: $UserName"
+        } 
+        
+        else {
+            Write-Host "Skipping allowed user account: $Username"
         }
     }
-} else {
-    Write-Host "CSV file not found at $CsvFilePath. Please provide a valid path."
-}
+} 
 
+else {
+
+    Write-Host "Windows local user account clean up failed. Process will be skipped."
+}
+#>
 # > Set Plugged In and Battery profiles to never turn off display or sleep
 
 # User powercfg utility to modify power plan settings

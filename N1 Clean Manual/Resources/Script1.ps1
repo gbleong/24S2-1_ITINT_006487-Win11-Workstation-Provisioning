@@ -24,8 +24,6 @@ $serviceTag = (Get-WmiObject Win32_BIOS).SerialNumber
 # Input deployed Dell device models that uses Dell Encryption for storage drives
 $ddsDeviceModels = @("Latitude 5300", "Latitude 5310", "Precision 7750")
 
-
-
 # Function to check for internet connectivity
 function checkInternetConnection {
 
@@ -152,7 +150,7 @@ Start-Process -FilePath "ChromeSetup.exe" -ArgumentList "/silent /install"
 
 # > Install Microsoft Office 365
 
-Start-Process -FilePath ".\M365 Offline Installer 12-3-2024\setup.exe" -ArgumentList '/configure ".\M365 Offline Installer 12-3-2024\Configuration365.xml"'
+Start-Process -FilePath "M365 Offline Installer 12-3-2024\setup.exe" -ArgumentList '/configure "M365 Offline Installer 12-3-2024\Configuration365.xml"'
 
 # > Install Dell Command Update
 
@@ -176,7 +174,7 @@ Start-Process -FilePath "AcroRdrDCx642200320282_MUI.exe" -ArgumentList /sPB -Wai
 if ($ddsDeviceModels | ForEach-Object { $_ -like $deviceModel }) {
 
     # Add Dell Encryption entitlement registry entry silently
-    Start-Process regedit.exe -ArgumentList '/s ".\Dell Data Encryption\Dell Encryption Entitlement.reg"' -Wait
+    Start-Process regedit.exe -ArgumentList '/s "Dell Data Encryption\Dell Encryption Entitlement.reg"' -Wait
 
     # Input temporary directory path for storing Dell Encryption software installer files
     $tempDdsInstallersPath = Join-Path $locAppDataTmpDir "DDS Installers"
@@ -186,7 +184,7 @@ if ($ddsDeviceModels | ForEach-Object { $_ -like $deviceModel }) {
     New-Item -ItemType Directory -Path $tempDdsInstallersPath -Force | Out-Null
 
     # Extract the Dell Encryption setup files into the temporary directory, and install all necessary software
-    Start-Process -FilePath ".\Dell Data Encryption\DDSSetup.exe" -ArgumentList /s, /z"`"EXTRACT_INSTALLERS=$tempDdsInstallersPath`"" -Wait
+    Start-Process -FilePath "Dell Data Encryption\DDSSetup.exe" -ArgumentList /s, /z"`"EXTRACT_INSTALLERS=$tempDdsInstallersPath`"" -Wait
     Start-Process -FilePath "$tempDdsInstallersPath\Prerequisites\Prereq_64bit_setup.exe" -ArgumentList /v"/passive" -Wait
     Start-Process -FilePath "$tempDdsInstallersPath\Encryption Management Agent\EMAgent_64bit_setup.exe" -ArgumentList '/v"/passive /norestart"' -Wait
 
@@ -230,16 +228,16 @@ Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 
 # Change working directory to location of credential files
 Set-Location -Path $credentialFilesDir
-
-# > Create Windows local admin user accounts
+<#
+# > Create Windows local admin user accounts WIP
 
 $n1WinLocalAdminCredFile = "N1 Windows Local Admin Credentials.csv"
 
 if (Test-Path $n1WinLocalAdminCredFile) {
 
-    $accounts = Import-Csv -Path $n1WinLocalAdminCredFile
+    $n1AdminAccounts = Import-Csv -Path $n1WinLocalAdminCredFile
 
-    foreach ($account in $accounts) {
+    foreach ($account in $n1AdminAccounts) {
 
         $username = $account.Username
         $password = $account.Password
@@ -259,7 +257,7 @@ else {
 
     Write-Host "Windows local admin user accounts creation failed. Process will be skipped."
 }
-
+#>
 
 
 <# Start Device Profiling Processes #>
@@ -279,7 +277,7 @@ Write-Host "Network Adapters:`n$netAdapterInfo"
 # > Display storage drive serial number
 
 # Open CrystalDiskInfo utility
-Start-Process -FilePath ".\CrystalDiskInfo8_12_0\DiskInfo64.exe" -Wait
+Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe" -Wait
 
 <#
 # Pause to keep the console open

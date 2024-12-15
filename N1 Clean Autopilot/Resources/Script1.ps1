@@ -163,7 +163,7 @@ Write-Host "Network Adapters:`n$netAdapterInfo"
 # > Display storage drive serial number
 
 # Open CrystalDiskInfo utility
-Start-Process -FilePath ".\CrystalDiskInfo8_12_0\DiskInfo64.exe" -Wait
+Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe" -Wait
 
 <#
 # Pause to keep the console open
