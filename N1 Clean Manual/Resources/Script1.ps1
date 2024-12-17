@@ -171,7 +171,7 @@ Start-Process -FilePath "AcroRdrDCx642200320282_MUI.exe" -ArgumentList /sPB -Wai
 # > Install Dell Encryption software
 
 # Check that Dell device model is compatible before installing Dell Encryption software
-if ($ddsDeviceModels | ForEach-Object { $_ -like $deviceModel }) {
+if ($ddsDeviceModels -contains $deviceModel) {
 
     # Add Dell Encryption entitlement registry entry silently
     Start-Process regedit.exe -ArgumentList '/s "Dell Data Encryption\Dell Encryption Entitlement.reg"' -Wait
@@ -205,10 +205,10 @@ $tempXmlFile = "$locAppDataTmpDir\AppAssoc.xml"
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 
 # Export current default app associations into temporary XML file
-dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile | Out-Null
+Start-Process dism.exe -ArgumentList "/online", "/Export-DefaultAppAssociations:$tempXmlFile" -Wait -NoNewWindow
 
 # Read exported XML file into an XML object for modification
-$xmlContent = [xml] (Get-Content -Path $tempXmlFile)
+$xmlContent = [xml] (Get-Content -Path $tempXmlFile -ErrorAction SilentlyContinue)
 
 # Locate association node corresponding to files with the .pdf extension
 $pdfAssociationNode = $xmlContent.SelectSingleNode("//Association[@Identifier='.pdf']")
@@ -221,14 +221,14 @@ $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 $xmlContent.Save($tempXmlFile)
 
 # Import updated default app associations from temporary XML file
-dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile | Out-Null
+Start-Process dism.exe -ArgumentList "/online", "/Import-DefaultAppAssociations:$tempXmlFile" -Wait -NoNewWindow
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 
 # Change working directory to location of credential files
 Set-Location -Path $credentialFilesDir
-<#
+
 # > Create Windows local admin user accounts WIP
 
 $n1WinLocalAdminCredFile = "N1 Windows Local Admin Credentials.csv"
@@ -247,9 +247,6 @@ if (Test-Path $n1WinLocalAdminCredFile) {
 
         # Add the user to the Administrators group
         Add-LocalGroupMember -Group "Administrators" -Member $username
-
-        # Remove the user from the Users group
-        Remove-LocalGroupMember -Group "Users" -Member $username
     }
 } 
 
@@ -257,7 +254,7 @@ else {
 
     Write-Host "Windows local admin user accounts creation failed. Process will be skipped."
 }
-#>
+
 
 
 <# Start Device Profiling Processes #>

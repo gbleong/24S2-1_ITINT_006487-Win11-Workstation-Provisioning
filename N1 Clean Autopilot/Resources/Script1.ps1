@@ -123,7 +123,7 @@ $tempXmlFile = "$locAppDataTmpDir\AppAssoc.xml"
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 
 # Export current default app associations into temporary XML file
-dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile | Out-Null
+Start-Process dism.exe -ArgumentList "/online", "/Export-DefaultAppAssociations:$tempXmlFile" -Wait -NoNewWindow
 
 # Read exported XML file into an XML object for modification
 $xmlContent = [xml] (Get-Content -Path $tempXmlFile)
@@ -139,7 +139,7 @@ $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 $xmlContent.Save($tempXmlFile)
 
 # Import updated default app associations from temporary XML file
-dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile | Out-Null
+Start-Process dism.exe -ArgumentList "/online", "/Import-DefaultAppAssociations:$tempXmlFile" -Wait -NoNewWindow
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue

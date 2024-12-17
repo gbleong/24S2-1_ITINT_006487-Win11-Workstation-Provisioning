@@ -3,6 +3,9 @@
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
+# Get root of system drive
+$rootSysDriveDir = $env:SystemDrive
+
 # Get the folder path for temporary local app data files
 $locAppDataTmpDir = $env:Temp
 
@@ -152,14 +155,14 @@ $brandSwUpdateAppShortcutName = $null
 
 if ($deviceManufacturer -like "Dell*") {
 
-    $brandSwUpdateAppPath = "C:\Program Files (x86)\Dell\CommandUpdate\DellCommandUpdate.exe"
+    $brandSwUpdateAppPath = "$rootSysDriveDir\Program Files (x86)\Dell\CommandUpdate\DellCommandUpdate.exe"
     $brandSwUpdateAppShortcutName = "Dell Command Update.lnk"
 
 }
 
 elseif ($deviceManufacturer -like "LENOVO*") {
 
-    $brandSwUpdateAppPath = "C:\Program Files (x86)\Lenovo\System Update\tvsu.exe"
+    $brandSwUpdateAppPath = "$rootSysDriveDir\Program Files (x86)\Lenovo\System Update\tvsu.exe"
     $brandSwUpdateAppShortcutName = "Lenovo System Update.lnk"
 }
 

@@ -1,5 +1,8 @@
 <# Initialize Global Variables and Functions #>
 
+# Get root of system drive
+$rootSysDriveDir = $env:SystemDrive
+
 # Get the folder path for temporary local app data files
 $locAppDataTmpDir = $env:Temp
 
@@ -95,11 +98,11 @@ if (-not $installCheck) {
 
 
 <# Start System Configuration Processes #>
-<#
+
 # Change working directory to location of credential files
 Set-Location -Path $credentialFilesDir
 
-# > Delete redundant Windows user accounts WIP
+# > Delete redundant Windows user accounts and files WIP
 
 $n1WinLocalAdminCredFile = "N1 Windows Local Admin Credentials.csv"
 
@@ -113,7 +116,7 @@ if (Test-Path $n1WinLocalAdminCredFile) {
 
     foreach ($account in $existingLocalAccounts) {
 
-        $Username = $account.Username
+        $Username = $account.Name
 
         # Check if the username is not in the list of allowed accounts
         if ($Username -notin $n1AdminAccounts) {
@@ -125,6 +128,9 @@ if (Test-Path $n1WinLocalAdminCredFile) {
                 # Remove the user account
                 Remove-LocalUser -Name $Username
                 Write-Host "Successfully deleted user account: $Username"
+
+                # Clean up leftover user profile files
+                Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
             } 
             
             catch {
@@ -143,7 +149,7 @@ else {
 
     Write-Host "Windows local user account clean up failed. Process will be skipped."
 }
-#>
+
 # > Set Plugged In and Battery profiles to never turn off display or sleep
 
 # User powercfg utility to modify power plan settings
@@ -168,14 +174,14 @@ $brandSwUpdateAppShortcutName = $null
 
 if ($deviceManufacturer -like "Dell*") {
 
-    $brandSwUpdateAppPath = "C:\Program Files (x86)\Dell\CommandUpdate\DellCommandUpdate.exe"
+    $brandSwUpdateAppPath = "$rootSysDriveDir\Program Files (x86)\Dell\CommandUpdate\DellCommandUpdate.exe"
     $brandSwUpdateAppShortcutName = "Dell Command Update.lnk"
 
 }
 
 elseif ($deviceManufacturer -like "LENOVO*") {
 
-    $brandSwUpdateAppPath = "C:\Program Files (x86)\Lenovo\System Update\tvsu.exe"
+    $brandSwUpdateAppPath = "$rootSysDriveDir\Program Files (x86)\Lenovo\System Update\tvsu.exe"
     $brandSwUpdateAppShortcutName = "Lenovo System Update.lnk"
 }
 
