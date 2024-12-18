@@ -202,10 +202,13 @@ if ($ddsDeviceModels -contains $deviceModel) {
 $tempXmlFile = "$locAppDataTmpDir\AppAssoc.xml"
 
 # Clean up any existing folders before proceeding
-Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
+if (Test-Path -Path $tempXmlFile) {
+
+    Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
+}
 
 # Export current default app associations into temporary XML file
-Start-Process dism.exe -ArgumentList "/online", "/Export-DefaultAppAssociations:$tempXmlFile" -Wait -NoNewWindow
+dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile | Out-Null
 
 # Read exported XML file into an XML object for modification
 $xmlContent = [xml] (Get-Content -Path $tempXmlFile -ErrorAction SilentlyContinue)
@@ -221,7 +224,7 @@ $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 $xmlContent.Save($tempXmlFile)
 
 # Import updated default app associations from temporary XML file
-Start-Process dism.exe -ArgumentList "/online", "/Import-DefaultAppAssociations:$tempXmlFile" -Wait -NoNewWindow
+dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile | Out-Null
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue

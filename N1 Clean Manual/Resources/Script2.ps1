@@ -112,7 +112,7 @@ if (Test-Path $n1WinLocalAdminCredFile) {
     $n1AdminAccounts = Import-Csv -Path $n1WinLocalAdminCredFile | Select-Object -ExpandProperty Username
 
     # Get a list of all local user accounts excluding system default accounts
-    $existingLocalAccounts = Get-LocalUser | Where-Object { $_.Name -notmatch "^DefaultAccount|^WDAGUtilityAccount|^Guest|^Administrator|^crdsecagent\$admin$" }
+    $existingLocalAccounts = Get-LocalUser | Where-Object { $_.Name -notmatch "^DefaultAccount|^WDAGUtilityAccount|^Guest|^Administrator" }
 
     foreach ($account in $existingLocalAccounts) {
 
