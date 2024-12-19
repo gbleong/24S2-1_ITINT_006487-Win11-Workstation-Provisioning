@@ -185,8 +185,8 @@ if ($ddsDeviceModels -contains $deviceModel) {
 
     # Extract the Dell Encryption setup files into the temporary directory, and install all necessary software
     Start-Process -FilePath "Dell Data Encryption\DDSSetup.exe" -ArgumentList /s, /z"`"EXTRACT_INSTALLERS=$tempDdsInstallersPath`"" -Wait
-    Start-Process -FilePath "$tempDdsInstallersPath\Prerequisites\Prereq_64bit_setup.exe" -ArgumentList /v"/passive" -Wait
-    Start-Process -FilePath "$tempDdsInstallersPath\Encryption Management Agent\EMAgent_64bit_setup.exe" -ArgumentList '/v"/passive /norestart"' -Wait
+    Start-Process -FilePath "$tempDdsInstallersPath\Prerequisites\Prereq_64bit_setup.exe" -ArgumentList '/s /v"/passive"' -Wait
+    Start-Process -FilePath "$tempDdsInstallersPath\Encryption Management Agent\EMAgent_64bit_setup.exe" -ArgumentList '/s /v"/passive /norestart"' -Wait
 
     # Delete temporary folder for installer files
     Remove-Item -Path $tempDdsInstallersPath -Recurse -Force -ErrorAction SilentlyContinue
@@ -232,30 +232,23 @@ Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 # Change working directory to location of credential files
 Set-Location -Path $credentialFilesDir
 
-# > Create Windows local admin user accounts WIP
+# > Create Windows local admin user accounts
 
-$n1WinLocalAdminCredFile = "N1 Windows Local Admin Credentials.csv"
+# Import contents of the CSV file containing Windows local admin credentials as an array of objects where each row represents an account
+$n1AdminAccounts = Import-Csv -Path "N1 Windows Local Admin Credentials.csv"
 
-if (Test-Path $n1WinLocalAdminCredFile) {
+ # Iterate through each account object in the imported CSV
+foreach ($account in $n1AdminAccounts) {
 
-    $n1AdminAccounts = Import-Csv -Path $n1WinLocalAdminCredFile
+    # Extract Username and Password fields from the current account object
+    $username = $account.Username
+    $password = $account.Password
 
-    foreach ($account in $n1AdminAccounts) {
+    # Create user account with the following settings: The user cannot change their password, and the password and account never expires.
+    New-LocalUser -Name $username -password (ConvertTo-SecureString $password -AsPlainText -Force) -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
 
-        $username = $account.Username
-        $password = $account.Password
-
-        # Create user account
-        New-LocalUser -Name $username -password (ConvertTo-SecureString $password -AsPlainText -Force) -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
-
-        # Add the user to the Administrators group
-        Add-LocalGroupMember -Group "Administrators" -Member $username
-    }
-} 
-
-else {
-
-    Write-Host "Windows local admin user accounts creation failed. Process will be skipped."
+    # Add the user to the Administrators group to grant it admin privileges
+    Add-LocalGroupMember -Group "Administrators" -Member $username
 }
 
 

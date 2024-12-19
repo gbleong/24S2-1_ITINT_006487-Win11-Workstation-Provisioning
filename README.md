@@ -8,19 +8,17 @@ This repository is designed to streamline and automate the process of configurin
 
 3. Device Profiling: Employs various utilities to retrieve and display essential system information.
 
-
-
 === File Structure Overview ===
 
 Folder Structure:
 
 Folders Labelled with Security Classification and Setup Method<br />
-    └─ Batch scripts (to run PowerShell scripts with admin privileges)<br />
-    └─ Resources Folder<br />
-        └─ PowerShell Scripts<br />
-        └─ Installers<br />
-        └─ Utility Tools (Contains applications for profiling system information)<br />
-        └─ Credential Files (CSV files containing user credentials)<br />
+&nbsp;└─ Batch scripts (to run PowerShell scripts with admin privileges)<br />
+&nbsp;└─ Resources Folder<br />
+&nbsp;&nbsp;└─ PowerShell Scripts<br />
+&nbsp;&nbsp;└─ Installers<br />
+&nbsp;&nbsp;└─ Utility Tools (Contains applications for profiling system information)<br />
+&nbsp;&nbsp;└─ Credential Files (CSV files containing user credentials)<br />
 
 Key Components:
 
@@ -49,8 +47,6 @@ Key Components:
 6. Credential Files Folder
 
     - Stores various credentials in CSV format.
-
-
 
 === Usage Instructions ===
 

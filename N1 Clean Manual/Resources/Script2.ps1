@@ -123,20 +123,13 @@ if (Test-Path $n1WinLocalAdminCredFile) {
 
             Write-Host "Deleting user account: $Username"
 
-            try {
+            # Remove the user account
+            Remove-LocalUser -Name $Username
+            Write-Host "Successfully deleted user account: $Username"
 
-                # Remove the user account
-                Remove-LocalUser -Name $Username
-                Write-Host "Successfully deleted user account: $Username"
-
-                # Clean up leftover user profile files
-                Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
-            } 
-            
-            catch {
-
-                Write-Host "Failed to delete user account: $Username. Error: $_"
-            }
+            # Clean up leftover user profile files
+            icacls.exe "$rootSysDriveDir\Users\$Username" /grant "Administrators:(OI)(CI)(F)" /inheritance:e #> $null 2>&1
+            Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
         } 
         
         else {
