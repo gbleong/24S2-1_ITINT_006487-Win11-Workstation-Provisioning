@@ -1,5 +1,8 @@
 <# Initialize Global Variables and Functions #>
 
+# Get the current folder path where credential files are located
+$credentialFilesDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Credential Files"
+
 # Get root of system drive
 $rootSysDriveDir = $env:SystemDrive
 
@@ -21,7 +24,7 @@ function checkInternetConnection {
     try {
 
         # Test connection using Google's DNS server
-        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet
+        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -ErrorAction SilentlyContinue
         return $response
     } 
 
@@ -54,8 +57,11 @@ if (-not $installCheck) {
             Start-Sleep -Seconds 4
         }
     
-        Write-Host "Internet connection established. Continuing with installation...`n"
+        Clear-Host
     }
+
+    # Create a new instance of .NET object for sending and receiving data
+    $webClient = New-Object System.Net.WebClient
 
     try {
 
@@ -75,11 +81,8 @@ if (-not $installCheck) {
         $msTeamsBootStrapperDlLink = "https://statics.teams.cdn.office.net/production-teamsprovision/lkg/teamsbootstrapper.exe"
 
         # Download files using System.Net.WebClient class
-        $webClient = New-Object System.Net.WebClient
         $webClient.DownloadFile($msTeamsX64MsixDlLink, "$tempMsTeamsInstallerPath\MSTeams-x64.msix")
         $webClient.DownloadFile($msTeamsBootStrapperDlLink, "$tempMsTeamsInstallerPath\teamsbootstrapper.exe")
-        $webClient.Dispose()
-        $webClient = $null
 
         # Provision Teams app with installation files
         Start-Process -FilePath "$tempMsTeamsInstallerPath\teamsbootstrapper.exe" -ArgumentList "-p", "-o", "$tempMsTeamsInstallerPath\MSTeams-x64.msix" -Wait
@@ -93,6 +96,10 @@ if (-not $installCheck) {
         # Log error message if installation process fails for any reason
         Write-Error "Microsoft Teams installation failed. Process will be skipped."
     }
+
+    # Clean up and release resources
+    $webClient.Dispose()
+    $webClient = $null
 } 
 
 
@@ -196,6 +203,7 @@ $winUpdateShortcut = $wshShell.CreateShortcut($winUpdateShortcutPath)
 $winUpdateShortcut.TargetPath = "ms-settings:windowsupdate"
 $winUpdateShortcut.Save()
 
+# Clean up and release resources
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
 $wshShell = $null
 

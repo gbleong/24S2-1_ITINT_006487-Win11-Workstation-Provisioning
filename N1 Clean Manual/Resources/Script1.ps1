@@ -30,7 +30,7 @@ function checkInternetConnection {
     try {
 
         # Test connection using Google's DNS server
-        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet
+        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -ErrorAction SilentlyContinue
         return $response
     } 
 
@@ -143,7 +143,7 @@ if (-not (checkInternetConnection)) {
         Start-Sleep -Seconds 4
     }
 
-    Write-Host "Internet connection established. Continuing with installation...`n"
+    Clear-Host
 }
 
 Start-Process -FilePath "ChromeSetup.exe" -ArgumentList "/silent /install"
