@@ -57,6 +57,7 @@ if (-not $installCheck) {
             Start-Sleep -Seconds 4
         }
     
+        Start-Sleep -Seconds 2
         Clear-Host
     }
 
@@ -135,7 +136,7 @@ if (Test-Path $n1WinLocalAdminCredFile) {
             Write-Host "Successfully deleted user account: $Username"
 
             # Clean up leftover user profile files
-            icacls.exe "$rootSysDriveDir\Users\$Username" /grant "Administrators:(OI)(CI)(F)" /inheritance:e #> $null 2>&1
+            icacls.exe "$rootSysDriveDir\Users\$Username" /grant "Administrators:(OI)(CI)(F)" /inheritance:e >$null 2>&1
             Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
         } 
         

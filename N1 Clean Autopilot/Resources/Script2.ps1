@@ -86,6 +86,7 @@ if (-not $installCheck) {
             Start-Sleep -Seconds 4
         }
     
+        Start-Sleep -Seconds 2
         Clear-Host
     }
 

@@ -12,13 +12,13 @@ This repository is designed to streamline and automate the process of configurin
 
 Folder Structure:
 
-Folders Labelled with Security Classification and Setup Method<br />
-&nbsp;└─ Batch scripts (to run PowerShell scripts with admin privileges)<br />
-&nbsp;└─ Resources Folder<br />
-&nbsp;&nbsp;└─ PowerShell Scripts<br />
-&nbsp;&nbsp;└─ Installers<br />
-&nbsp;&nbsp;└─ Utility Tools (Contains applications for profiling system information)<br />
-&nbsp;&nbsp;└─ Credential Files (CSV files containing user credentials)<br />
+Folders Labelled with Security Classification and Setup Method
+&nbsp;└─ Batch scripts (to run PowerShell scripts with admin privileges)
+&nbsp;└─ Resources Folder
+&nbsp;&nbsp;└─ PowerShell Scripts
+&nbsp;&nbsp;└─ Installers
+&nbsp;&nbsp;└─ Utility Tools (Contains applications for profiling system information)
+&nbsp;&nbsp;└─ Credential Files (CSV files containing user credentials)
 
 Key Components:
 
