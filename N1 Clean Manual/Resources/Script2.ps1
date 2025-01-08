@@ -24,7 +24,7 @@ function checkInternetConnection {
     try {
 
         # Test connection using Google's DNS server
-        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -ErrorAction SilentlyContinue
+        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -ErrorAction SilentlyContinue
         return $response
     } 
 
@@ -42,7 +42,7 @@ function checkInternetConnection {
 # > Install Microsoft Teams
 
 # Check if Microsoft Teams is already installed and functioning properly by checking that its name appears in the list of start menu apps
-$installCheck = Get-StartApps | Where-Object { $_.Name -like "$msTeamsAppName" }
+$installCheck = Get-StartApps -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "$msTeamsAppName" }
 
 # If Microsoft Teams is not installed, proceed with the installation process
 if (-not $installCheck) {
@@ -136,7 +136,8 @@ if (Test-Path $n1WinLocalAdminCredFile) {
             Write-Host "Successfully deleted user account: $Username"
 
             # Clean up leftover user profile files
-            icacls.exe "$rootSysDriveDir\Users\$Username" /grant "Administrators:(OI)(CI)(F)" /inheritance:e >$null 2>&1
+            #icacls.exe "$rootSysDriveDir\Users\$Username" /grant "Administrators:(OI)(CI)(F)" /inheritance:e >$null 2>&1
+            icacls.exe "$rootSysDriveDir\Users\$Username" /grant Administrators:F /T
             Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
         } 
         
@@ -208,8 +209,6 @@ $winUpdateShortcut.Save()
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
 $wshShell = $null
 
-<#
 # Pause to keep the console open
-Write-Host "`nPress any key to exit..."
+Write-Host "N1 Clean Manual Script 2 execution completed. Press any key to exit..."
 [System.Console]::ReadKey() | Out-Null
-#>

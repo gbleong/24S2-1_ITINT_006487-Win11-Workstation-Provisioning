@@ -27,7 +27,7 @@ function checkInternetConnection {
     try {
 
         # Test connection using Google's DNS server
-        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -ErrorAction SilentlyContinue
+        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -ErrorAction SilentlyContinue
         return $response
     } 
 
@@ -71,7 +71,7 @@ else {
 # > Install Microsoft Teams
 
 # Check if Microsoft Teams is already installed and functioning properly by checking that its name appears in the list of start menu apps
-$installCheck = Get-StartApps | Where-Object { $_.Name -like "$msTeamsAppName" }
+$installCheck = Get-StartApps -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "$msTeamsAppName" }
 
 # If Microsoft Teams is not installed, proceed with the installation process
 if (-not $installCheck) {
@@ -193,8 +193,6 @@ $winUpdateShortcut.Save()
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
 $wshShell = $null
 
-<#
 # Pause to keep the console open
-Write-Host "`nPress any key to exit..."
+Write-Host "N1 Clean Autopilot Script 2 execution completed. Press any key to exit..."
 [System.Console]::ReadKey() | Out-Null
-#>

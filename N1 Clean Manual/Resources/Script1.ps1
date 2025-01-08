@@ -30,7 +30,7 @@ function checkInternetConnection {
     try {
 
         # Test connection using Google's DNS server
-        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -ErrorAction SilentlyContinue
+        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1-Quiet -ErrorAction SilentlyContinue
         return $response
     } 
 
@@ -121,7 +121,7 @@ Stop-Process -Name "SetupBD" -Force -ErrorAction SilentlyContinue
 # Check that device manufacturer is Lenovo before installing Lenovo-specific software update application
 if ($deviceManufacturer -like "LENOVO*") {
 
-    Start-Process -FilePath "system_update_5.08.02.25.exe" -ArgumentList /SP-, /SILENT
+    Start-Process -FilePath "system_update_5.08.02.25.exe" -ArgumentList "/SILENT /NORESTART"
 }
 
 # > Install HP Support Assistant
@@ -163,7 +163,7 @@ if ($deviceManufacturer -like "Dell*") {
 
 # > Install Comber
 
-Start-Process -FilePath "Comber x64 1.0.1.0.exe" -ArgumentList /v"/passive" -Wait
+Start-Process -FilePath "Comber x64 1.1.0.0.exe" -ArgumentList /v"/passive" -Wait
 
 # > Install Adobe Acrobat
 
@@ -209,7 +209,7 @@ if (Test-Path -Path $tempXmlFile) {
 }
 
 # Export current default app associations into temporary XML file
-dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile | Out-Null
+dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile /quiet | Out-Null
 
 # Read exported XML file into an XML object for modification
 $xmlContent = [xml] (Get-Content -Path $tempXmlFile -ErrorAction SilentlyContinue)
@@ -225,7 +225,7 @@ $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 $xmlContent.Save($tempXmlFile)
 
 # Import updated default app associations from temporary XML file
-dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile | Out-Null
+dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile /quiet | Out-Null
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
@@ -273,8 +273,6 @@ Write-Host "Network Adapters:`n$netAdapterInfo"
 # Open CrystalDiskInfo utility
 Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe" -Wait
 
-<#
 # Pause to keep the console open
-Write-Host "`nPress any key to exit..."
+Write-Host "N1 Clean Manual Script 1 execution completed. Press any key to exit..."
 [System.Console]::ReadKey() | Out-Null
-#>

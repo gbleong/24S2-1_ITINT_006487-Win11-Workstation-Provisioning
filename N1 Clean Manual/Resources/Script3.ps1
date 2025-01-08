@@ -3,7 +3,11 @@
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
+# Get computer name
+$compName = (Get-WmiObject Win32_ComputerSystem).Name
 
+# Get Windows version and build
+$winVerBuild = "$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').DisplayVersion) (OS Build $((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').CurrentBuildNumber).$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').UBR))"
 
 <# Start Software Installation Processes #>
 
@@ -30,16 +34,14 @@ Start-Process -FilePath msiexec.exe -ArgumentList "/i ClearPassOnGuardInstall.ms
 
 <# Start Device Profiling Processes #>
 
-# > Open About Windows dialog
+# > Display computer name
 
-Start-Process winver.exe
+Write-Host "Computer Name: $compName`n"
 
-# > Open System Properties dialog
+# > Open Windows version and build
 
-Start-Process sysdm.cpl
+Write-Host "Windows Version and Build: $winVerBuild`n"
 
-<#
 # Pause to keep the console open
-Write-Host "`nPress any key to exit..."
+Write-Host "N1 Clean Manual Script 3 execution completed. Press any key to exit..."
 [System.Console]::ReadKey() | Out-Null
-#>
