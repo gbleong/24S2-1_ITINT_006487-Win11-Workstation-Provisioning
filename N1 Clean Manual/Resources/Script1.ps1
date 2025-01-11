@@ -30,7 +30,7 @@ function checkInternetConnection {
     try {
 
         # Test connection using Google's DNS server
-        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1-Quiet -ErrorAction SilentlyContinue
+        $response = Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -ErrorAction SilentlyContinue
         return $response
     } 
 
@@ -144,7 +144,6 @@ if (-not (checkInternetConnection)) {
     }
 
     Start-Sleep -Seconds 2
-    Clear-Host
 }
 
 Start-Process -FilePath "ChromeSetup.exe" -ArgumentList "/silent /install"
@@ -222,7 +221,7 @@ $pdfAssociationNode.ProgId = "Acrobat.Document.DC"
 $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 
 # Save changes back to temporary XML file
-$xmlContent.Save($tempXmlFile)
+$xmlContent.OuterXml | Set-Content -Path $tempXmlFile -Force
 
 # Import updated default app associations from temporary XML file
 dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile /quiet | Out-Null
@@ -232,6 +231,43 @@ Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 
 # Change working directory to location of credential files
 Set-Location -Path $credentialFilesDir
+
+# > Turn off or disable privacy & security settings
+
+# Define array of hash tables representing registry entries related to privacy and security settings
+$privSecRegEntries = @(
+
+    # Disables choose privacy settings experience for all users
+    @{Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OOBE"; Name = "DisablePrivacyExperience"; Type = "DWord"; Value = 1},
+
+    # Turns off location services for all users
+    @{Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location"; Name = "Value"; Type = "String"; Value = "Deny"},
+
+    # Turns off Find My Device services for all users
+    @{Path = "HKLM:\SOFTWARE\Microsoft\MdmCommon\SettingValues"; Name = "LocationSyncEnabled"; Type = "DWord"; Value = 0},
+
+    # Disables diagnostic data collection for all users
+    @{Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"; Name = "AllowTelemetry"; Type = "DWord"; Value = 0},
+
+    # Disables inking and typing improvement services for all users
+    @{Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\TextInput"; Name = "AllowLinguisticDataCollection"; Type = "DWord"; Value = 0},
+
+    # Disables advertising ID usage for all users
+    @{Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo"; Name = "DisabledByGroupPolicy"; Type = "DWord"; Value = 1}
+)
+
+# Iterate over each registry entry, and create or modify it
+foreach ($regEntry in $privSecRegEntries) {
+
+    # Check if registry key exists, and creates it if it does not
+    if (-not (Test-Path $regEntry.Path)) {
+
+        New-Item -Path $regEntry.Path -Force
+    }
+
+    # Set the registry value
+    Set-ItemProperty -Path $regEntry.Path -Name $regEntry.Name -Value $regEntry.Value -Type $regEntry.Type
+}
 
 # > Create Windows local admin user accounts
 
@@ -252,6 +288,9 @@ foreach ($account in $n1AdminAccounts) {
     Add-LocalGroupMember -Group "Administrators" -Member $username
 }
 
+# Removes all text from the current display
+Clear-Host
+
 
 
 <# Start Device Profiling Processes #>
@@ -271,7 +310,9 @@ Write-Host "Network Adapters:`n$netAdapterInfo"
 # > Display storage drive serial number
 
 # Open CrystalDiskInfo utility
-Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe" -Wait
+Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe"
+
+
 
 # Pause to keep the console open
 Write-Host "N1 Clean Manual Script 1 execution completed. Press any key to exit..."

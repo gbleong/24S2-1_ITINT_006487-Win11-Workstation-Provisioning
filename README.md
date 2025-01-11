@@ -18,7 +18,7 @@ Folders Labelled with Security Classification and Setup Method
     └─ Resources Folder
         └─ PowerShell Scripts
         └─ Installers
-        └─ Utility Tools (Contains applications for profiling system information)
+        └─ Utility Tools
         └─ Credential Files (CSV files containing user credentials)
 ```
 

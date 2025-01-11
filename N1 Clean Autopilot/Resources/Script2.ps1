@@ -190,8 +190,13 @@ $winUpdateShortcut.TargetPath = "ms-settings:windowsupdate"
 $winUpdateShortcut.Save()
 
 # Clean up and release resources
-[System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
+[void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
 $wshShell = $null
+
+# Removes all text from the current display
+Clear-Host
+
+
 
 # Pause to keep the console open
 Write-Host "N1 Clean Autopilot Script 2 execution completed. Press any key to exit..."

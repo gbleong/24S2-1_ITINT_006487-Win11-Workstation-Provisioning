@@ -139,13 +139,127 @@ $pdfAssociationNode.ProgId = "Acrobat.Document.DC"
 $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 
 # Save changes back to temporary XML file
-$xmlContent.Save($tempXmlFile)
+$xmlContent.OuterXml | Set-Content -Path $tempXmlFile -Force
 
 # Import updated default app associations from temporary XML file
 dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile /quiet | Out-Null
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
+
+# > Turn off or disable privacy & security settings
+
+# Define array of registry entries related to privacy and security settings
+$privSecRegEntries = @(
+
+    # Disables choose privacy settings experience for all users
+    @{Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OOBE"; Name = "DisablePrivacyExperience"; Type = "DWord"; Value = 1},
+
+    # Turns off location services for all users
+    @{Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location"; Name = "Value"; Type = "String"; Value = "Deny"},
+
+    # Turns off Find My Device services for all users
+    @{Path = "HKLM:\SOFTWARE\Microsoft\MdmCommon\SettingValues"; Name = "LocationSyncEnabled"; Type = "DWord"; Value = 0},
+
+    # Disables diagnostic data collection for all users
+    @{Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"; Name = "AllowTelemetry"; Type = "DWord"; Value = 0},
+
+    # Disables inking and typing improvement services for all users
+    @{Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\TextInput"; Name = "AllowLinguisticDataCollection"; Type = "DWord"; Value = 0},
+
+    # Disables advertising ID usage for all users
+    @{Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo"; Name = "DisabledByGroupPolicy"; Type = "DWord"; Value = 1}
+)
+
+# Iterate over each registry entry, and create or modify it
+foreach ($regEntry in $privSecRegEntries) {
+
+    # Check if registry key exists, and creates it if it does not
+    if (-not (Test-Path $regEntry.Path)) {
+
+        New-Item -Path $regEntry.Path -Force | Out-Null
+    }
+
+    # Set the registry value
+    Set-ItemProperty -Path $regEntry.Path -Name $regEntry.Name -Value $regEntry.Value -Type $regEntry.Type
+}
+
+# Define the path to default user NTUSER.DAT file
+$DefaultUserHivePath = "C:\Users\Default\NTUSER.DAT"
+
+# Define a temporary mount point for the registry hive
+$HiveKeyName = "TempDefaultUserHive"
+
+# # Define array of registry entries related to privacy and security settings
+$privSecRegEntries = @(
+
+    # Turns off improve inking and typing services in default user configuration profile
+    @{Path = "Software\Microsoft\Input\TIPC"; Name = "Enabled"; Type = "REG_DWORD"; Value = 0},
+
+    # Turns off advertising ID usage in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo"; Name = "Enabled"; Type = "REG_DWORD"; Value = 0},
+
+    # Turns off tailored experiences services in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\Privacy"; Name = "TailoredExperiencesWithDiagnosticDataEnabled"; Type = "REG_DWORD"; Value = 0},
+
+    # Disables tailored experiences services in default user configuration profile
+    @{Path = "Software\Policies\Microsoft\Windows\CloudContent"; Name = "DisableTailoredExperiencesWithDiagnosticData"; Type = "REG_DWORD"; Value = 1},
+
+    # Turns off website access to language list in default user configuration profile
+    @{Path = "Control Panel\International\User Profile"; Name = "HttpAcceptLanguageOptOut"; Type = "REG_DWORD"; Value = 1},
+
+    # Turns off app launch tracking in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "Start_TrackProgs"; Type = "REG_DWORD"; Value = 0},
+
+    # Disables app launch tracking in default user configuration profile
+    @{Path = "Software\Policies\Microsoft\Windows\EdgeUI"; Name = "DisableMFUTracking"; Type = "REG_DWORD"; Value = 1},
+
+    # Turns off suggested content in settings in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-338393Enabled"; Type = "REG_DWORD"; Value = 0},
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-353694Enabled"; Type = "REG_DWORD"; Value = 0},
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-353696Enabled"; Type = "REG_DWORD"; Value = 0},
+
+    # Turn off notifications in settings app in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications"; Name = "EnableAccountNotifications"; Type = "REG_DWORD"; Value = 0}
+)
+
+# Check if the NTUSER.DAT file exists
+if (-Not (Test-Path -Path $DefaultUserHivePath)) {
+    Write-Host "Error: Default user NTUSER.DAT file not found at $DefaultUserHivePath" -ForegroundColor Red
+    exit 1
+}
+
+# Load the hive
+try {
+    Write-Host "Loading the NTUSER.DAT hive..."
+    reg load HKU\$HiveKeyName $DefaultUserHivePath | Out-Null
+} catch {
+    Write-Host "Error: Failed to load the hive. Ensure you have administrative privileges." -ForegroundColor Red
+    exit 1
+}
+
+# Create or modify the registry entries
+try {
+    foreach ($entry in $privSecRegEntries) {
+
+        # Ensure the key exists
+        New-Item -Path "HKU\$HiveKeyName\$($entry.Path)" -Force | Out-Null
+
+        # Use reg.exe to set the value explicitly
+        $RegCommand = "reg.exe add `"HKU\$HiveKeyName\$($entry.Path)`" /v $($entry.Name) /t $($entry.Type) /d $($entry.Value) /f"
+        Invoke-Expression $RegCommand
+        Write-Host "Successfully created or modified the registry entry."
+    }
+} catch {
+    Write-Host "Error: Failed to create or modify registry entries. Details: $_" -ForegroundColor Red
+} finally {
+    # Unload the hive
+    Write-Host "Unloading the hive..."
+    reg unload HKU\$HiveKeyName | Out-Null
+}
+
+# Removes all text from the current display
+Clear-Host
 
 
 
@@ -166,7 +280,8 @@ Write-Host "Network Adapters:`n$netAdapterInfo"
 # > Display storage drive serial number
 
 # Open CrystalDiskInfo utility
-Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe" -Wait
+Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe"
+
 
 
 # Pause to keep the console open

@@ -137,6 +137,7 @@ if (Test-Path $n1WinLocalAdminCredFile) {
 
             # Clean up leftover user profile files
             #icacls.exe "$rootSysDriveDir\Users\$Username" /grant "Administrators:(OI)(CI)(F)" /inheritance:e >$null 2>&1
+            takeown /F "$rootSysDriveDir\Users\$Username" /R /D Y
             icacls.exe "$rootSysDriveDir\Users\$Username" /grant Administrators:F /T
             Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
         } 
@@ -206,8 +207,13 @@ $winUpdateShortcut.TargetPath = "ms-settings:windowsupdate"
 $winUpdateShortcut.Save()
 
 # Clean up and release resources
-[System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
+[void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
 $wshShell = $null
+
+# Removes all text from the current display
+Clear-Host
+
+
 
 # Pause to keep the console open
 Write-Host "N1 Clean Manual Script 2 execution completed. Press any key to exit..."

@@ -9,6 +9,8 @@ $compName = (Get-WmiObject Win32_ComputerSystem).Name
 # Get Windows version and build
 $winVerBuild = "$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').DisplayVersion) (OS Build $((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').CurrentBuildNumber).$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').UBR))"
 
+
+
 <# Start Software Installation Processes #>
 
 # Change working directory to location of installers
@@ -30,6 +32,8 @@ Start-Process -FilePath GlobalProtect64-6.0.3.msi -ArgumentList /passive -Wait
 
 Start-Process -FilePath msiexec.exe -ArgumentList "/i ClearPassOnGuardInstall.msi /passive" -Wait
 
+# Removes all text from the current display
+Clear-Host
 
 
 <# Start Device Profiling Processes #>
@@ -41,6 +45,8 @@ Write-Host "Computer Name: $compName`n"
 # > Open Windows version and build
 
 Write-Host "Windows Version and Build: $winVerBuild`n"
+
+
 
 # Pause to keep the console open
 Write-Host "N1 Clean Manual Script 3 execution completed. Press any key to exit..."
