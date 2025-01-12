@@ -3,8 +3,8 @@
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
-# Get the current folder path where utility tools are located
-$utilityToolsDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Utility Tools"
+# Get the current folder path where other files are located
+$othersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Others"
 
 # Get the folder path for temporary local app data files
 $locAppDataTmpDir = $env:Temp
@@ -126,7 +126,7 @@ if (Test-Path -Path $tempXmlFile) {
 }
 
 # Export current default app associations into temporary XML file
-dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile /quiet | Out-Null
+dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile /quiet >$null 2>&1
 
 # Read exported XML file into an XML object for modification
 $xmlContent = [xml] (Get-Content -Path $tempXmlFile)
@@ -142,7 +142,7 @@ $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 $xmlContent.OuterXml | Set-Content -Path $tempXmlFile -Force
 
 # Import updated default app associations from temporary XML file
-dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile /quiet | Out-Null
+dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile /quiet >$null 2>&1
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
@@ -174,21 +174,18 @@ $privSecRegEntries = @(
 # Iterate over each registry entry, and create or modify it
 foreach ($regEntry in $privSecRegEntries) {
 
-    # Check if registry key exists, and creates it if it does not
-    if (-not (Test-Path $regEntry.Path)) {
+    # Creates registry key if it does not already exist
+    New-Item -Path $regEntry.Path -Force | Out-Null
 
-        New-Item -Path $regEntry.Path -Force | Out-Null
-    }
-
-    # Set the registry value
+    # Add the specified registry entry
     Set-ItemProperty -Path $regEntry.Path -Name $regEntry.Name -Value $regEntry.Value -Type $regEntry.Type
 }
 
-# Define the path to default user NTUSER.DAT file
-$DefaultUserHivePath = "C:\Users\Default\NTUSER.DAT"
+# Define path to default user NTUSER.DAT file
+$defaultUserHivePath = "C:\Users\Default\NTUSER.DAT"
 
-# Define a temporary mount point for the registry hive
-$HiveKeyName = "TempDefaultUserHive"
+# Define temporrary key name for mounting registry hive
+$tempHiveKeyName = "TempDefaultUserHive"
 
 # # Define array of registry entries related to privacy and security settings
 $privSecRegEntries = @(
@@ -223,40 +220,40 @@ $privSecRegEntries = @(
     @{Path = "Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications"; Name = "EnableAccountNotifications"; Type = "REG_DWORD"; Value = 0}
 )
 
-# Check if the NTUSER.DAT file exists
-if (-Not (Test-Path -Path $DefaultUserHivePath)) {
-    Write-Host "Error: Default user NTUSER.DAT file not found at $DefaultUserHivePath" -ForegroundColor Red
-    exit 1
-}
-
-# Load the hive
-try {
-    Write-Host "Loading the NTUSER.DAT hive..."
-    reg load HKU\$HiveKeyName $DefaultUserHivePath | Out-Null
-} catch {
-    Write-Host "Error: Failed to load the hive. Ensure you have administrative privileges." -ForegroundColor Red
-    exit 1
-}
+# Load registry hive into temporary registry key
+reg.exe load HKU\$tempHiveKeyName $defaultUserHivePath >$null 2>&1
 
 # Create or modify the registry entries
-try {
-    foreach ($entry in $privSecRegEntries) {
+foreach ($entry in $privSecRegEntries) {
 
-        # Ensure the key exists
-        New-Item -Path "HKU\$HiveKeyName\$($entry.Path)" -Force | Out-Null
+    # Creates registry key if it does not already exist
+    New-Item -Path "HKU\$tempHiveKeyName\$($entry.Path)" -Force | Out-Null
 
-        # Use reg.exe to set the value explicitly
-        $RegCommand = "reg.exe add `"HKU\$HiveKeyName\$($entry.Path)`" /v $($entry.Name) /t $($entry.Type) /d $($entry.Value) /f"
-        Invoke-Expression $RegCommand
-        Write-Host "Successfully created or modified the registry entry."
-    }
-} catch {
-    Write-Host "Error: Failed to create or modify registry entries. Details: $_" -ForegroundColor Red
-} finally {
-    # Unload the hive
-    Write-Host "Unloading the hive..."
-    reg unload HKU\$HiveKeyName | Out-Null
+    # Add the specified registry entry
+    reg.exe add `"HKU\$tempHiveKeyName\$($entry.Path)`" /v $($entry.Name) /t $($entry.Type) /d $($entry.Value) /f >$null 2>&1
 }
+
+# Unload registry hive from temporary registry key
+reg.exe unload HKU\$tempHiveKeyName >$null 2>&1
+
+# Change working directory to location of other files
+Set-Location -Path $othersDir
+
+# > Import Menlo security root certificate
+
+# Open local machine certificate store for Trusted Root Certification Authorities
+$certStore = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
+
+# Create certificate object
+$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(Join-Path -Path (Get-Location) -ChildPath "MenloSecurityRootCA.crt")
+
+# Import certificate to store
+$certStore.Open('ReadWrite')
+$certStore.Add($certificate)
+$certStore.Close()
+
+# Clean up and release resources
+$certificate.Dispose()
 
 # Removes all text from the current display
 Clear-Host
@@ -264,9 +261,6 @@ Clear-Host
 
 
 <# Start Device Profiling Processes #>
-
-# Change working directory to location of utility tools
-Set-Location -Path $utilityToolsDir
 
 # > Display device service tag
 Write-Host "Service Tag: $serviceTag`n"

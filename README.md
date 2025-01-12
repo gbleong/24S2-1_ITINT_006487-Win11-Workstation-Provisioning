@@ -1,4 +1,4 @@
-This repository is designed to streamline and automate the process of configuring and setting up PC assets owned by an anonymous organization, within an environment requiring consistent and repeatable configurations. By utilizing a structured file system and a combination of batch and PowerShell scripts, this project ensures efficient setup while maintaining flexibility for different PC security classifications.
+This repository is designed to streamline and automate the process of configuring and setting up PC assets owned by an anonymous organization, within an environment requiring consistent and repeatable configurations. By utilizing a structured file system and a combination of Batchfile and PowerShell scripts, this project ensures efficient setup while maintaining flexibility for different PC security classifications.
 
 === Features ===
 
@@ -14,12 +14,12 @@ Folder Structure:
 
 ```plaintext
 Folders Labelled with Security Classification and Setup Method
-    └─ Batch scripts (to run PowerShell scripts with admin privileges)
-    └─ Resources Folder
+    └─ Batchfile Scripts (to run PowerShell scripts with admin privileges)
+    └─ Resources
         └─ PowerShell Scripts
         └─ Installers
-        └─ Utility Tools
         └─ Credential Files (CSV files containing user credentials)
+        └─ Others
 ```
 
 Key Components:
@@ -42,13 +42,13 @@ Key Components:
 
     - Houses all installer executables and packages for the deployment of required software.
 
-5. Utility Tools Folder
-
-    - Contains additional tools for gathering detailed device information.
-
-6. Credential Files Folder
+5. Credential Files Folder
 
     - Stores various credentials in CSV format.
+
+6. Others Folder
+
+    - Contains additional files and tools to be used for other purposes
 
 === Usage Instructions ===
 

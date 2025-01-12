@@ -68,7 +68,7 @@ if (-not $installCheck) {
 
         # Attempt to remove any existing Microsoft Teams applications and registry keys for all users, if they exist to ensure clean installation
         Get-AppxPackage -All $msTeamsAppName | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-        reg delete "HKLM\SOFTWARE\WOW6432Node\Microsoft\Office\Teams" /f >$null 2>&1
+        reg.exe delete "HKLM\SOFTWARE\WOW6432Node\Microsoft\Office\Teams" /f >$null 2>&1
 
         # Input temporary directory path for storing Teams installer files
         $tempMsTeamsInstallerPath = Join-Path "$locAppDataTmpDir" "msTeamsInstaller"

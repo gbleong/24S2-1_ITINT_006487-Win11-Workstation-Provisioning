@@ -3,8 +3,8 @@
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
-# Get the current folder path where utility tools are located
-$utilityToolsDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Utility Tools"
+# Get the current folder path where other files are located
+$othersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Others"
 
 # Get the current folder path where credential files are located
 $credentialFilesDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Credential Files"
@@ -118,3 +118,9 @@ Start-Process -FilePath "Comber x64 1.1.0.0.exe" -ArgumentList /v"/passive" -Wai
 # > Install Adobe Acrobat
 
 Start-Process -FilePath "AcroRdrDCx642200320282_MUI.exe" -ArgumentList /sPB -Wait
+
+
+
+# Pause to keep the console open
+Write-Host "N2 Clean Manual Script 1 execution completed. Press any key to exit..."
+[System.Console]::ReadKey() | Out-Null

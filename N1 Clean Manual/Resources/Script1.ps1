@@ -3,8 +3,8 @@
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
-# Get the current folder path where utility tools are located
-$utilityToolsDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Utility Tools"
+# Get the current folder path where other files are located
+$othersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Others"
 
 # Get the current folder path where credential files are located
 $credentialFilesDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Credential Files"
@@ -208,7 +208,7 @@ if (Test-Path -Path $tempXmlFile) {
 }
 
 # Export current default app associations into temporary XML file
-dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile /quiet | Out-Null
+dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile /quiet >$null 2>&1
 
 # Read exported XML file into an XML object for modification
 $xmlContent = [xml] (Get-Content -Path $tempXmlFile -ErrorAction SilentlyContinue)
@@ -224,17 +224,14 @@ $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 $xmlContent.OuterXml | Set-Content -Path $tempXmlFile -Force
 
 # Import updated default app associations from temporary XML file
-dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile /quiet | Out-Null
+dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile /quiet >$null 2>&1
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
 
-# Change working directory to location of credential files
-Set-Location -Path $credentialFilesDir
-
 # > Turn off or disable privacy & security settings
 
-# Define array of hash tables representing registry entries related to privacy and security settings
+# Define array of registry entries related to privacy and security settings
 $privSecRegEntries = @(
 
     # Disables choose privacy settings experience for all users
@@ -259,15 +256,89 @@ $privSecRegEntries = @(
 # Iterate over each registry entry, and create or modify it
 foreach ($regEntry in $privSecRegEntries) {
 
-    # Check if registry key exists, and creates it if it does not
-    if (-not (Test-Path $regEntry.Path)) {
+    # Creates registry key if it does not already exist
+    New-Item -Path $regEntry.Path -Force | Out-Null
 
-        New-Item -Path $regEntry.Path -Force
-    }
-
-    # Set the registry value
+    # Add the specified registry entry
     Set-ItemProperty -Path $regEntry.Path -Name $regEntry.Name -Value $regEntry.Value -Type $regEntry.Type
 }
+
+# Define path to default user NTUSER.DAT file
+$defaultUserHivePath = "C:\Users\Default\NTUSER.DAT"
+
+# Define temporrary key name for mounting registry hive
+$tempHiveKeyName = "TempDefaultUserHive"
+
+# # Define array of registry entries related to privacy and security settings
+$privSecRegEntries = @(
+
+    # Turns off improve inking and typing services in default user configuration profile
+    @{Path = "Software\Microsoft\Input\TIPC"; Name = "Enabled"; Type = "REG_DWORD"; Value = 0},
+
+    # Turns off advertising ID usage in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo"; Name = "Enabled"; Type = "REG_DWORD"; Value = 0},
+
+    # Turns off tailored experiences services in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\Privacy"; Name = "TailoredExperiencesWithDiagnosticDataEnabled"; Type = "REG_DWORD"; Value = 0},
+
+    # Disables tailored experiences services in default user configuration profile
+    @{Path = "Software\Policies\Microsoft\Windows\CloudContent"; Name = "DisableTailoredExperiencesWithDiagnosticData"; Type = "REG_DWORD"; Value = 1},
+
+    # Turns off website access to language list in default user configuration profile
+    @{Path = "Control Panel\International\User Profile"; Name = "HttpAcceptLanguageOptOut"; Type = "REG_DWORD"; Value = 1},
+
+    # Turns off app launch tracking in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "Start_TrackProgs"; Type = "REG_DWORD"; Value = 0},
+
+    # Disables app launch tracking in default user configuration profile
+    @{Path = "Software\Policies\Microsoft\Windows\EdgeUI"; Name = "DisableMFUTracking"; Type = "REG_DWORD"; Value = 1},
+
+    # Turns off suggested content in settings in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-338393Enabled"; Type = "REG_DWORD"; Value = 0},
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-353694Enabled"; Type = "REG_DWORD"; Value = 0},
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-353696Enabled"; Type = "REG_DWORD"; Value = 0},
+
+    # Turn off notifications in settings app in default user configuration profile
+    @{Path = "Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications"; Name = "EnableAccountNotifications"; Type = "REG_DWORD"; Value = 0}
+)
+
+# Load registry hive into temporary registry key
+reg.exe load HKU\$tempHiveKeyName $defaultUserHivePath >$null 2>&1
+
+# Create or modify the registry entries
+foreach ($entry in $privSecRegEntries) {
+
+    # Creates registry key if it does not already exist
+    New-Item -Path "HKU\$tempHiveKeyName\$($entry.Path)" -Force | Out-Null
+
+    # Add the specified registry entry
+    reg.exe add `"HKU\$tempHiveKeyName\$($entry.Path)`" /v $($entry.Name) /t $($entry.Type) /d $($entry.Value) /f >$null 2>&1
+}
+
+# Unload registry hive from temporary registry key
+reg.exe unload HKU\$tempHiveKeyName >$null 2>&1
+
+# Change working directory to location of other files
+Set-Location -Path $othersDir
+
+# > Import Menlo security root certificate
+
+# Open local machine certificate store for Trusted Root Certification Authorities
+$certStore = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
+
+# Create certificate object
+$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(Join-Path -Path (Get-Location) -ChildPath "MenloSecurityRootCA.crt")
+
+# Import certificate to store
+$certStore.Open('ReadWrite')
+$certStore.Add($certificate)
+$certStore.Close()
+
+# Clean up and release resources
+$certificate.Dispose()
+
+# Change working directory to location of credential files
+Set-Location -Path $credentialFilesDir
 
 # > Create Windows local admin user accounts
 
@@ -295,8 +366,8 @@ Clear-Host
 
 <# Start Device Profiling Processes #>
 
-# Change working directory to location of utility tools
-Set-Location -Path $utilityToolsDir
+# Change working directory to location of other files
+Set-Location -Path $othersDir
 
 # > Display device service tag
 Write-Host "Service Tag: $serviceTag`n"
