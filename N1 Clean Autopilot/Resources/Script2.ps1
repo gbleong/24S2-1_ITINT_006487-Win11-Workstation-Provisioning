@@ -86,8 +86,7 @@ if (-not $installCheck) {
             Start-Sleep -Seconds 4
         }
     
-        Start-Sleep -Seconds 2
-        Clear-Host
+        Write-Host "Internet connection established. Proceeding with Teams installation..."
     }
 
     # Create a new instance of .NET object for sending and receiving data
@@ -190,8 +189,9 @@ $winUpdateShortcut.TargetPath = "ms-settings:windowsupdate"
 $winUpdateShortcut.Save()
 
 # Clean up and release resources
-[void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
 $wshShell = $null
+[GC]::Collect()
+[GC]::WaitForPendingFinalizers()
 
 # Removes all text from the current display
 Clear-Host

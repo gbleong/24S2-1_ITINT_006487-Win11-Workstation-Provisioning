@@ -57,8 +57,7 @@ if (-not $installCheck) {
             Start-Sleep -Seconds 4
         }
     
-        Start-Sleep -Seconds 2
-        Clear-Host
+        Write-Host "Internet connection established. Proceeding with Teams installation..."
     }
 
     # Create a new instance of .NET object for sending and receiving data
@@ -112,45 +111,27 @@ Set-Location -Path $credentialFilesDir
 
 # > Delete redundant Windows user accounts and files WIP
 
-$n1WinLocalAdminCredFile = "N1 Windows Local Admin Credentials.csv"
+# Import list of allowed usernames from  CSV file containing Windows local admin credentials as an array of objects where each row represents an account
+$n1AdminAccounts = Import-Csv -Path "N1 Windows Local Admin Credentials.csv" | Select-Object -ExpandProperty Username
 
-if (Test-Path $n1WinLocalAdminCredFile) {
+# Get list of all local user accounts excluding system default accounts
+$existingLocalAccounts = Get-LocalUser | Where-Object { $_.Name -notmatch "^DefaultAccount|^WDAGUtilityAccount|^Guest|^Administrator" }
 
-    # Import list of allowed usernames from the CSV file containing credentials for N1 Windows local admin accounts
-    $n1AdminAccounts = Import-Csv -Path $n1WinLocalAdminCredFile | Select-Object -ExpandProperty Username
+# Iterate through each account object in the imported CSV
+foreach ($account in $existingLocalAccounts) {
 
-    # Get a list of all local user accounts excluding system default accounts
-    $existingLocalAccounts = Get-LocalUser | Where-Object { $_.Name -notmatch "^DefaultAccount|^WDAGUtilityAccount|^Guest|^Administrator" }
+    $Username = $account.Name
 
-    foreach ($account in $existingLocalAccounts) {
+    # Executes subsequent code if username is not in the list of allowed accounts
+    if ($Username -notin $n1AdminAccounts) {
 
-        $Username = $account.Name
+        # Remove the user account
+        Remove-LocalUser -Name $Username
 
-        # Check if the username is not in the list of allowed accounts
-        if ($Username -notin $n1AdminAccounts) {
-
-            Write-Host "Deleting user account: $Username"
-
-            # Remove the user account
-            Remove-LocalUser -Name $Username
-            Write-Host "Successfully deleted user account: $Username"
-
-            # Clean up leftover user profile files
-            #icacls.exe "$rootSysDriveDir\Users\$Username" /grant "Administrators:(OI)(CI)(F)" /inheritance:e >$null 2>&1
-            takeown /F "$rootSysDriveDir\Users\$Username" /R /D Y
-            icacls.exe "$rootSysDriveDir\Users\$Username" /grant Administrators:F /T
-            Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
-        } 
-        
-        else {
-            Write-Host "Skipping allowed user account: $Username"
-        }
-    }
-} 
-
-else {
-
-    Write-Host "Windows local user account clean up failed. Process will be skipped."
+        # Grants full access permissions to Administrators group to clean up leftover user profile files
+        icacls.exe "$rootSysDriveDir\Users\$Username" /grant Administrators:F /T /C
+        Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
+    } 
 }
 
 # > Set Plugged In and Battery profiles to never turn off display or sleep
@@ -207,8 +188,9 @@ $winUpdateShortcut.TargetPath = "ms-settings:windowsupdate"
 $winUpdateShortcut.Save()
 
 # Clean up and release resources
-[void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($wshShell) | Out-Null
 $wshShell = $null
+[GC]::Collect()
+[GC]::WaitForPendingFinalizers()
 
 # Removes all text from the current display
 Clear-Host

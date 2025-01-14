@@ -6,6 +6,9 @@ $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "In
 # Get the current folder path where other files are located
 $othersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Others"
 
+# Get root of system drive
+$rootSysDriveDir = $env:SystemDrive
+
 # Get the folder path for temporary local app data files
 $locAppDataTmpDir = $env:Temp
 
@@ -182,7 +185,7 @@ foreach ($regEntry in $privSecRegEntries) {
 }
 
 # Define path to default user NTUSER.DAT file
-$defaultUserHivePath = "C:\Users\Default\NTUSER.DAT"
+$defaultUserHivePath = "$rootSysDriveDir\Users\Default\NTUSER.DAT"
 
 # Define temporrary key name for mounting registry hive
 $tempHiveKeyName = "TempDefaultUserHive"
@@ -226,10 +229,7 @@ reg.exe load HKU\$tempHiveKeyName $defaultUserHivePath >$null 2>&1
 # Create or modify the registry entries
 foreach ($entry in $privSecRegEntries) {
 
-    # Creates registry key if it does not already exist
-    New-Item -Path "HKU\$tempHiveKeyName\$($entry.Path)" -Force | Out-Null
-
-    # Add the specified registry entry
+    # Add or modify the specified registry entry
     reg.exe add `"HKU\$tempHiveKeyName\$($entry.Path)`" /v $($entry.Name) /t $($entry.Type) /d $($entry.Value) /f >$null 2>&1
 }
 
