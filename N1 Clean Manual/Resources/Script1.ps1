@@ -147,6 +147,7 @@ if (-not (checkInternetConnection)) {
     }
 
     Start-Sleep -Seconds 2
+    Write-Host "Internet connection established. Proceeding with Chrome installation...`n"
 }
 
 Start-Process -FilePath "ChromeSetup.exe" -ArgumentList "/silent /install"

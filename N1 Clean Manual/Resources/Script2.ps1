@@ -42,7 +42,7 @@ function checkInternetConnection {
 # > Install Microsoft Teams
 
 # Check if Microsoft Teams is already installed and functioning properly by checking that its name appears in the list of start menu apps
-$installCheck = Get-StartApps -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "$msTeamsAppName" }
+$installCheck = $null -ne (Get-StartApps | Where-Object { $_.Name -like $msTeamsAppName })
 
 # If Microsoft Teams is not installed, proceed with the installation process
 if (-not $installCheck) {
@@ -129,6 +129,7 @@ foreach ($account in $existingLocalAccounts) {
         Remove-LocalUser -Name $Username
 
         # Grants full access permissions to Administrators group to clean up leftover user profile files
+        #icacls.exe "$rootSysDriveDir\Users\$Username" /grant "Administrators:(OI)(CI)(F)" /inheritance:e >$null 2>&1
         icacls.exe "$rootSysDriveDir\Users\$Username" /grant Administrators:F /T /C
         Remove-Item -Path "$rootSysDriveDir\Users\$Username" -Recurse -Force -ErrorAction SilentlyContinue
     } 

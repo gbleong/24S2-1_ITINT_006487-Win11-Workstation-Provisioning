@@ -56,7 +56,7 @@ if ($deviceManufacturer -like "HP*") {
 # > Install or repair GlobalProtect
 
 # Query WMI Win32_Product class for applications installed via MSI to check if GlobalProtect is already installed, and install or repair it accordingly
-$installCheck = Get-WmiObject Win32_Product | Where-Object { $_.Name -like "$globalprotectAppName" }
+$installCheck = $null -ne (Get-WmiObject Win32_Product | Where-Object { $_.Name -like $globalprotectAppName })
 
 if ($installCheck) {
 
@@ -71,7 +71,7 @@ else {
 # > Install Microsoft Teams
 
 # Check if Microsoft Teams is already installed and functioning properly by checking that its name appears in the list of start menu apps
-$installCheck = Get-StartApps -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "$msTeamsAppName" }
+$installCheck = $null -ne (Get-StartApps | Where-Object { $_.Name -like $msTeamsAppName })
 
 # If Microsoft Teams is not installed, proceed with the installation process
 if (-not $installCheck) {
