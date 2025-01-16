@@ -135,6 +135,29 @@ if (-not $installCheck) {
 
 <# Start System Configuration Processes #>
 
+Set-Location -Path $credentialFilesDir
+
+# > Delete redundant Windows user accounts and files
+
+# Import list of allowed usernames from  CSV file containing Windows local admin credentials as an array of objects where each row represents an account
+$n1AdminAccounts = Import-Csv -Path "N1 Windows Local Admin Credentials.csv" | Select-Object -ExpandProperty Username
+
+# Get list of all local user accounts excluding system default accounts
+$existingLocalAccounts = Get-LocalUser | Where-Object { $_.Name -notmatch "^DefaultAccount|^WDAGUtilityAccount|^Guest|^Administrator" }
+
+# Iterate through each account object in the imported CSV
+foreach ($account in $existingLocalAccounts) {
+
+    $Username = $account.Name
+
+    # Executes subsequent code if username is not in the list of allowed accounts
+    if ($Username -notin $n1AdminAccounts) {
+
+        # Remove the user account
+        Remove-LocalUser -Name $Username
+    } 
+}
+
 # > Set Plugged In and Battery profiles to never turn off display or sleep
 
 # User powercfg utility to modify power plan settings

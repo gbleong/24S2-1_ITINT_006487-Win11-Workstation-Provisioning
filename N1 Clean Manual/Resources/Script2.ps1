@@ -109,7 +109,7 @@ if (-not $installCheck) {
 # Change working directory to location of credential files
 Set-Location -Path $credentialFilesDir
 
-# > Delete redundant Windows user accounts and files WIP
+# > Delete redundant Windows user accounts and files
 
 # Import list of allowed usernames from  CSV file containing Windows local admin credentials as an array of objects where each row represents an account
 $n1AdminAccounts = Import-Csv -Path "N1 Windows Local Admin Credentials.csv" | Select-Object -ExpandProperty Username
