@@ -89,9 +89,6 @@ if (-not $installCheck) {
         Write-Host "Internet connection established. Proceeding with Teams installation..."
     }
 
-    # Create a new instance of .NET object for sending and receiving data
-    $webClient = New-Object System.Net.WebClient
-
     try {
 
         # Attempt to remove any existing Microsoft Teams applications and registry keys for all users, if they exist to ensure clean installation
@@ -109,9 +106,9 @@ if (-not $installCheck) {
         $msTeamsX64MsixDlLink = "https://statics.teams.cdn.office.net/production-windows-x64/enterprise/webview2/lkg/MSTeams-x64.msix"
         $msTeamsBootStrapperDlLink = "https://statics.teams.cdn.office.net/production-teamsprovision/lkg/teamsbootstrapper.exe"
 
-        # Download files using System.Net.WebClient class
-        $webClient.DownloadFile($msTeamsX64MsixDlLink, "$tempMsTeamsInstallerPath\MSTeams-x64.msix")
-        $webClient.DownloadFile($msTeamsBootStrapperDlLink, "$tempMsTeamsInstallerPath\teamsbootstrapper.exe")
+        # Download files using Background Intelligent Transfer Service (BITS)
+        Start-BitsTransfer -Source $msTeamsX64MsixDlLink -Destination "$tempMsTeamsInstallerPath\MSTeams-x64.msix"
+        Start-BitsTransfer -Source $msTeamsBootStrapperDlLink -Destination "$tempMsTeamsInstallerPath\teamsbootstrapper.exe"
 
         # Provision Teams app with installation files
         Start-Process -FilePath "$tempMsTeamsInstallerPath\teamsbootstrapper.exe" -ArgumentList "-p", "-o", "$tempMsTeamsInstallerPath\MSTeams-x64.msix" -Wait
@@ -125,10 +122,6 @@ if (-not $installCheck) {
         # Log error message if installation process fails for any reason
         Write-Error "Microsoft Teams installation failed. Process will be skipped."
     }
-
-    # Clean up and release resources
-    $webClient.Dispose()
-    $webClient = $null
 } 
 
 
@@ -213,8 +206,6 @@ $winUpdateShortcut.Save()
 
 # Clean up and release resources
 $wshShell = $null
-[GC]::Collect()
-[GC]::WaitForPendingFinalizers()
 
 # Removes all text from the current display
 Clear-Host

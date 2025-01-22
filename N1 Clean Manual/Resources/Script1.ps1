@@ -61,63 +61,7 @@ Start-Process -FilePath "WiFi-23.60.1-Driver64-Win10-Win11.exe" -ArgumentList /p
 
 # > Install Intel network connections driver
 
-# Get list of folders in directory for temporary local app data files
-$locAppDataTmpFolders = Get-ChildItem -Path $locAppDataTmpDir -Directory -ErrorAction SilentlyContinue
-
-# Check for and remove leftover temporary WinZip Self-Extractor files
-foreach ($folder in $locAppDataTmpFolders) {
-
-    if ($folder.Name -match "^WZSE\d+\.TMP$") {
-
-        Remove-Item -Path $folder.FullName -Recurse -Force -ErrorAction SilentlyContinue
-    }
-}
-
-Start-Process -FilePath "Wired_driver_29.3_x64.exe"
-
-$targetWzseTmpFolder = $null
-
-do {
-
-    # Pause to allow WinZip Self-Extractor process to finish running
-    Start-Sleep -Seconds 2
-
-    # Get list of folders in directory for temporary local app data files
-    $locAppDataTmpFolders = Get-ChildItem -Path $locAppDataTmpDir -Directory -ErrorAction SilentlyContinue
-
-    # Check for and find folder matching the naming convention for WinZip Self-Extractor folders
-    foreach ($folder in $locAppDataTmpFolders) {
-
-        if ($folder.Name -match "^WZSE\d+\.TMP$") {
-
-            # Store existing WinZip Self-Extractor folder name
-            $targetWzseTmpFolder = $folder.Name
-
-	        do {
-
-                # Pause to allow WinZip Self-Extractor process to finish running
-                Start-Sleep -Seconds 2
-
-    		    # Construct the expected file path for target executable
-                $setupbdExe = Join-Path $locAppDataTmpDir (Join-Path $targetWzseTmpFolder "APPS\SETUP\SETUPBD\Winx64\SetupBD.exe")
-
-                # Run target file if it exists
-                if (Test-Path -Path $setupbdExe) {
-
-	                $process = Start-Process -FilePath $setupbdExe -ArgumentList "/switch /m" -PassThru
-                    $process.WaitForExit()
-                    break
-                }
-
-            } while (-not (Test-Path -Path $setupbdExe))
-
-            break
-        }
-    }
-    
-} while (-not $targetWzseTmpFolder)
-
-Stop-Process -Name "SetupBD" -Force -ErrorAction SilentlyContinue
+Start-Process -FilePath "Wired_driver_29.5_x64\SetupBD.exe" -ArgumentList "/switch /m"
 
 # > Install Lenovo System Update
 
@@ -212,7 +156,7 @@ if (Test-Path -Path $tempXmlFile) {
 }
 
 # Export current default app associations into temporary XML file
-dism.exe /online /Export-DefaultAppAssociations:$tempXmlFile /quiet >$null 2>&1
+Start-Process dism.exe -ArgumentList "/online", "/Export-DefaultAppAssociations:$tempXmlFile", "/quiet" -NoNewWindow -Wait
 
 # Read exported XML file into an XML object for modification
 $xmlContent = [xml] (Get-Content -Path $tempXmlFile -ErrorAction SilentlyContinue)
@@ -228,7 +172,7 @@ $pdfAssociationNode.ApplicationName = "Adobe Acrobat"
 $xmlContent.OuterXml | Set-Content -Path $tempXmlFile -Force
 
 # Import updated default app associations from temporary XML file
-dism.exe /online /Import-DefaultAppAssociations:$tempXmlFile /quiet >$null 2>&1
+Start-Process dism.exe -ArgumentList "/online", "/Import-DefaultAppAssociations:$tempXmlFile", "/quiet" -NoNewWindow -Wait
 
 # Delete temporary XML file
 Remove-Item -Path $tempXmlFile -Force -ErrorAction SilentlyContinue
