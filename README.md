@@ -18,7 +18,7 @@ Folders Labelled with Security Classification and Setup Method
     └─ Resources
         └─ PowerShell Scripts
         └─ Installers
-        └─ Credential Files (CSV files containing user credentials)
+        └─ Credential Files
         └─ Others
 ```
 

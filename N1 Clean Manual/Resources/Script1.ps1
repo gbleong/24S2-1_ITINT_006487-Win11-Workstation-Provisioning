@@ -98,7 +98,7 @@ Start-Process -FilePath "ChromeSetup.exe" -ArgumentList "/silent /install"
 
 # > Install Microsoft Office 365
 
-Start-Process -FilePath "M365 Offline Installer 12-3-2024\setup.exe" -ArgumentList '/configure "M365 Offline Installer 12-3-2024\Configuration365.xml"'
+Start-Process -FilePath "M365 Offline Installer 12-3-2024\setup.exe" -ArgumentList '/configure "M365 Offline Installer 12-3-2024\Configuration365.xml"', "/norestart"
 
 # > Install Dell Command Update
 

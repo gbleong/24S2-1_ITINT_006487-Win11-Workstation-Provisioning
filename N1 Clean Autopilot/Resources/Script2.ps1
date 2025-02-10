@@ -3,6 +3,9 @@
 # Get the current folder path where installers are located
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
+# Get the current folder path where credential files are located
+$credentialFilesDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Credential Files"
+
 # Get root of system drive
 $rootSysDriveDir = $env:SystemDrive
 
@@ -16,7 +19,7 @@ $desktopPath = "$env:USERPROFILE\Desktop"
 $globalprotectAppName = "GlobalProtect*"
 
 # Input Microsoft Teams software name
-$msTeamsAppName = "Microsoft Teams*"
+$msTeamsAppName = "*teams*"
 
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
