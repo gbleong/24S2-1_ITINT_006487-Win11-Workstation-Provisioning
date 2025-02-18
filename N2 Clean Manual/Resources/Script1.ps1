@@ -9,8 +9,17 @@ $othersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Others
 # Get the current folder path where credential files are located
 $credentialFilesDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Credential Files"
 
+# Get root of system drive
+$rootSysDriveDir = $env:SystemDrive
+
+# Get default user template profile folder
+$defaultUserDir = "$rootSysDriveDir\Users\Default"
+
 # Get device manufacturer information
 $deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
+
+# Get device OS caption
+$osCaption = (Get-WmiObject Win32_OperatingSystem).Caption
 
 
 
@@ -190,8 +199,9 @@ foreach ($entry in $privSecRegEntries) {
 # Unload registry hive from temporary registry key
 reg.exe unload HKU\$tempHiveKeyName >$null 2>&1
 
-# > Modify default Start Menu and Taskbar layout for all users
+# > Remove redundant apps
 
+# Define array of app package IDs of redundant apps to remove
 $appsToRemove = @(
 
     "Microsoft.OutlookForWindows",
@@ -210,14 +220,72 @@ $appsToRemove = @(
     "7EE7776C.LinkedInforWindows"
 )
 
-# Remove apps for the current user and provisioned packages (new users)
+# Iterate through array, find, and remove matching provisioned apps
 foreach ($app in $appsToRemove) {
 
-    # Remove for new users (provisioned)
     Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like "*$app*"} | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction SilentlyContinue
 }
 
+# > Modify default Start Menu and Taskbar layout for all users
 
+# Copy Start Menu (only works for Windows 10) and Taskbar layout configuration XML file to default user profile Shell directory
+Robocopy.exe "$othersDir" "$defaultUserDir\AppData\Local\Microsoft\Windows\Shell" "LayoutModification.xml" >$null 2>&1
+
+# Check if the OS is Windows 11, and execute the subsequent code if so
+if ($osCaption -like "Windows 11") {
+
+    # Copy Windows 11 Start Menu layout configuration binary file to designated location
+    Robocopy.exe "$othersDir" "$defaultUserDir\AppData\Local\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState" "start2.bin" >$null 2>&1
+}
+
+# Change working directory to location of credential files
+Set-Location -Path $credentialFilesDir
+
+# > Create Windows local accounts
+
+# Import lists of allowed usernames from CSV files containing Windows local account credentials as an array of objects where each row represents an account
+$n2BreakGlassAdminAccounts = Import-Csv -Path "N2 Windows Break-Glass Admin Credentials.csv"
+$n2EmployeeAccounts = Import-Csv -Path "N2 Windows Employee Admin & User Credentials.csv"
+
+# Iterate through each account object in the imported CSV
+foreach ($account in $n2BreakGlassAdminAccounts) {
+
+    # Extract Username and Password fields from the current account object
+    $username = $account.Username
+    $password = $account.Password
+
+    # Create user account with the following settings: The user cannot change their password, and the password and account never expires.
+    New-LocalUser -Name $username -FullName $username -Password (ConvertTo-SecureString $password -AsPlainText -Force) -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
+
+    # Add the user to the Administrators group to grant it admin privileges
+    Add-LocalGroupMember -Group "Administrators" -Member $username
+}
+
+foreach ($account in $n2EmployeeAccounts) {
+
+    # Extract Username and Password fields from the current account object
+    $username = $account.Username
+    $fullName = $account.FullName
+    $adminPrivs = [bool]::Parse($account.AdminPrivs)
+
+    # Create user account without any pre-defined configuration
+    New-LocalUser -Name $username -FullName $fullName -Password (ConvertTo-SecureString "!Qwerty7" -AsPlainText -Force)
+
+    if ($adminPrivs) {
+
+        # Add the user to the Administrators group to grant it admin privileges
+        Add-LocalGroupMember -Group "Administrators" -Member $username
+    }
+
+    else {
+
+        # Add the user to the Users group to grant it normal user privileges
+        Add-LocalGroupMember -Group "Users" -Member $username
+    }
+}
+
+# Removes all text from the current display
+Clear-Host
 
 
 
