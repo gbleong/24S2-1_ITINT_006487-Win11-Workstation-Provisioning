@@ -3,6 +3,9 @@
 # Get the current folder path where credential files are located
 $credentialFilesDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Credential Files"
 
+# Get device service tag from Win32_BIOS WMI class
+$serviceTag = (Get-CimInstance -ClassName Win32_BIOS).SerialNumber
+
 # Get Windows version and build
 $winVerBuild = "$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').DisplayVersion) (OS Build $((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').CurrentBuildNumber).$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').UBR))"
 
@@ -164,16 +167,33 @@ Clear-Host
 
 <# Start Device Profiling Processes #>
 
-# > Display computer name
-
-Start-Process sysdm.cpl
+# > Display device service tag
+Write-Host "Service Tag: $serviceTag`n"
 
 # > Open Windows version and build
 
 Write-Host "Windows Version and Build: $winVerBuild`n"
 
+# > Display device network adapter information
+
+# Query WMI Win32_NetworkAdapter class for relevant information, store it as a string in a variable, and output it
+$netAdapterInfo = Get-CimInstance -ClassName Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
+Write-Host "Network Adapters:`n$netAdapterInfo"
+
+# > Display storage drive serial number
+
+# Change working directory to location of other files
+Set-Location -Path $othersDir
+
+# Open CrystalDiskInfo utility
+Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe"
+
+# > Display computer name
+
+Start-Process sysdm.cpl
+
 
 
 # Pause to keep the console open
-Write-Host "N1 Clean Manual Script 3 execution completed. Press any key to exit..."
+Write-Host "N2 Clean Manual Script 2 execution completed. Press any key to exit..."
 [System.Console]::ReadKey() | Out-Null

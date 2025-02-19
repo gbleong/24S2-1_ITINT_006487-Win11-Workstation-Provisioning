@@ -16,10 +16,10 @@ $rootSysDriveDir = $env:SystemDrive
 $defaultUserDir = "$rootSysDriveDir\Users\Default"
 
 # Get device manufacturer information
-$deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
+$deviceManufacturer = (Get-CimInstance -ClassName Win32_ComputerSystem).Manufacturer
 
 # Get device OS caption
-$osCaption = (Get-WmiObject Win32_OperatingSystem).Caption
+$osCaption = (Get-CimInstance Win32_OperatingSystem).Caption
 
 
 

@@ -16,7 +16,7 @@ $desktopPath = "$env:USERPROFILE\Desktop"
 $msTeamsAppName = "Microsoft Teams*"
 
 # Get device manufacturer information
-$deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
+$deviceManufacturer = (Get-CimInstance -ClassName Win32_ComputerSystem).Manufacturer
 
 # Function to check for internet connectivity
 function checkInternetConnection {

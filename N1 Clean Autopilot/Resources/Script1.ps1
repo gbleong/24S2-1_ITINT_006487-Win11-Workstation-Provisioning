@@ -13,10 +13,10 @@ $rootSysDriveDir = $env:SystemDrive
 $locAppDataTmpDir = $env:Temp
 
 # Get device manufacturer information
-$deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
+$deviceManufacturer = (Get-CimInstance -ClassName Win32_ComputerSystem).Manufacturer
 
 # Get device service tag from Win32_BIOS WMI class
-$serviceTag = (Get-WmiObject Win32_BIOS).SerialNumber
+$serviceTag = (Get-CimInstance -ClassName Win32_BIOS).SerialNumber
 
 
 
@@ -180,10 +180,10 @@ foreach ($entry in $privSecRegEntries) {
 # Unload registry hive from temporary registry key
 reg.exe unload HKU\$tempHiveKeyName >$null 2>&1
 
+# > Import Menlo security root certificate
+
 # Change working directory to location of other files
 Set-Location -Path $othersDir
-
-# > Import Menlo security root certificate
 
 # Open local machine certificate store for Trusted Root Certification Authorities
 $certStore = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
@@ -212,7 +212,7 @@ Write-Host "Service Tag: $serviceTag`n"
 # > Display device network adapter information
 
 # Query WMI Win32_NetworkAdapter class for relevant information, store it as a string in a variable, and output it
-$netAdapterInfo = Get-WmiObject Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
+$netAdapterInfo = Get-CimInstance -ClassName Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
 Write-Host "Network Adapters:`n$netAdapterInfo"
 
 # > Display storage drive serial number

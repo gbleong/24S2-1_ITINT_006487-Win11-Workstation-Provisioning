@@ -16,13 +16,13 @@ $rootSysDriveDir = $env:SystemDrive
 $locAppDataTmpDir = $env:Temp
 
 # Get device manufacturer information
-$deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
+$deviceManufacturer = (Get-CimInstance -ClassName Win32_ComputerSystem).Manufacturer
 
 # Get device model information
-$deviceModel = (Get-WmiObject Win32_ComputerSystem).Model
+$deviceModel = (Get-CimInstance -ClassName Win32_ComputerSystem).Model
 
 # Get device service tag from Win32_BIOS WMI class
-$serviceTag = (Get-WmiObject Win32_BIOS).SerialNumber
+$serviceTag = (Get-CimInstance -ClassName Win32_BIOS).SerialNumber
 
 # Input deployed Dell device models that uses Dell Encryption for storage drives
 $ddsDeviceModels = @("Latitude 5300", "Latitude 5310", "Precision 7750")
@@ -263,10 +263,10 @@ foreach ($entry in $privSecRegEntries) {
 # Unload registry hive from temporary registry key
 reg.exe unload HKU\$tempHiveKeyName >$null 2>&1
 
+# > Import Menlo security root certificate
+
 # Change working directory to location of other files
 Set-Location -Path $othersDir
-
-# > Import Menlo security root certificate
 
 # Open local machine certificate store for Trusted Root Certification Authorities
 $certStore = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
@@ -311,19 +311,19 @@ Clear-Host
 
 <# Start Device Profiling Processes #>
 
-# Change working directory to location of other files
-Set-Location -Path $othersDir
-
 # > Display device service tag
 Write-Host "Service Tag: $serviceTag`n"
 
 # > Display device network adapter information
 
 # Query WMI Win32_NetworkAdapter class for relevant information, store it as a string in a variable, and output it
-$netAdapterInfo = Get-WmiObject Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
+$netAdapterInfo = Get-CimInstance -ClassName Win32_NetworkAdapter | Select-Object NetConnectionID, Name, MACAddress | Out-String
 Write-Host "Network Adapters:`n$netAdapterInfo"
 
 # > Display storage drive serial number
+
+# Change working directory to location of other files
+Set-Location -Path $othersDir
 
 # Open CrystalDiskInfo utility
 Start-Process -FilePath "CrystalDiskInfo8_12_0\DiskInfo64.exe"

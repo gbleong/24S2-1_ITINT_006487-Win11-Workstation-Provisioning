@@ -4,7 +4,7 @@
 $installersDir = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Installers"
 
 # Get computer name
-$compName = (Get-WmiObject Win32_ComputerSystem).Name
+$compName = (Get-CimInstance -ClassName Win32_ComputerSystem).Name
 
 # Get Windows version and build
 $winVerBuild = "$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').DisplayVersion) (OS Build $((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').CurrentBuildNumber).$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').UBR))"

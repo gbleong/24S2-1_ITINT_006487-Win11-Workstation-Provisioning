@@ -22,7 +22,7 @@ $globalprotectAppName = "GlobalProtect*"
 $msTeamsAppName = "*teams*"
 
 # Get device manufacturer information
-$deviceManufacturer = (Get-WmiObject Win32_ComputerSystem).Manufacturer
+$deviceManufacturer = (Get-CimInstance -ClassName Win32_ComputerSystem).Manufacturer
 
 # Function to check for internet connectivity
 function checkInternetConnection {
@@ -59,7 +59,7 @@ if ($deviceManufacturer -like "HP*") {
 # > Install or repair GlobalProtect
 
 # Query WMI Win32_Product class for applications installed via MSI to check if GlobalProtect is already installed, and install or repair it accordingly
-$installCheck = $null -ne (Get-WmiObject Win32_Product | Where-Object { $_.Name -like $globalprotectAppName })
+$installCheck = $null -ne (Get-CimInstance -ClassName Win32_Product | Where-Object { $_.Name -like $globalprotectAppName })
 
 if ($installCheck) {
 
